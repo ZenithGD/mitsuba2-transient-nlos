@@ -19,42 +19,100 @@ Mitsuba 2, extended for transient path tracing and non-line-of-sight data captur
 We provide the `transientpath`, `transientstokes` and `streakhdrfilm` plugins. There is an example scene below.
 
 ```xml
-<scene version="2.2.1">
-   <!-- Use transientpath integrator -->
-   <integrator type="transientpath">
-      <!-- Discard paths with depth >= max_depth -->
-      <integer name="max_depth" value="4"/>
-   </integrator>
+<scene version="2.0.0">
+    <default name="spp" value="256"/>
+    <default name="res" value="512"/>
+    <default name="max_depth" value="4"/>
 
-   <!-- Use transientstokes integrator -->
-   <!--
-   <integrator type="transientstokes">
-      <integrator type="transientpath">
-            <integer name="max_depth" value="10"/>
-      </integrator>
-   </integrator>
-   -->
+    <!-- <integrator type="direct"/> -->
+    <integrator type="transientpath">
+        <integer name="max_depth" value="$max_depth"/>
+    </integrator>
 
-   <!-- Geometry, etc. -->
+    <bsdf type="diffuse" id="box">
+        <rgb name="reflectance" value="0.45, 0.30, 0.90"/>
+    </bsdf>
 
-   <sensor ...>
-      <!-- Sensor configuration etc. -->
+    <bsdf type="diffuse" id="white">
+        <rgb name="reflectance" value="0.885809, 0.698859, 0.666422"/>
+    </bsdf>
 
-      <!-- Streak (transient) film with dimensions width x height x time -->
-      <film type="streakhdrfilm" name="streakfilm">
-         <integer name="width" value="1024"/>
-         <integer name="height" value="1024"/>
-         <integer name="time" value="400"/>
-         <float name="exposure_time" value="8"/>
-         <float name="time_offset" value="500"/>
-         <rfilter name="rfilter" type="gaussian"/>
-         <boolean name="high_quality_edges" value="true"/>
+    <bsdf type="diffuse" id="red">
+        <rgb name="reflectance" value="0.570068, 0.0430135, 0.0443706"/>
+    </bsdf>
 
-         <!-- NOTE: tfilter is not yet implemented -->
-         <rfilter name="tfilter" type="gaussian"/>
-      </film>
+    <bsdf type="diffuse" id="green">
+        <rgb name="reflectance" value="0.105421, 0.37798, 0.076425"/>
+    </bsdf>
 
-   </sensor>
+    <bsdf type="diffuse" id="light">
+        <rgb name="reflectance" value="0.936461, 0.740433, 0.705267"/>
+    </bsdf>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_luminaire.obj"/>
+        <transform name="to_world">
+            <translate x="0" y="-0.5" z="0"/>
+        </transform>
+        <ref id="light"/>
+        <ref id="area-emitter"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_floor.obj"/>
+        <ref id="white"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_ceiling.obj"/>
+        <ref id="white"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_back.obj"/>
+        <ref id="white"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_greenwall.obj"/>
+        <ref id="green"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_redwall.obj"/>
+        <ref id="red"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_smallbox.obj"/>
+        <ref id="box"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_largebox.obj"/>
+        <ref id="box"/>
+    </shape>
+
+    <emitter type="area" id="area-emitter">
+        <rgb name="radiance" value="18.387, 10.9873, 2.75357"/>
+    </emitter>
+
+    <sensor type="perspective">
+        <string name="fov_axis" value="smaller"/>
+        <float name="near_clip" value="10"/>
+        <float name="far_clip" value="2800"/>
+        <float name="focus_distance" value="1000"/>
+        <float name="fov" value="39.3077"/>
+        <transform name="to_world">
+            <lookat origin="278, 273, -800"
+                    target="278, 273, -799"
+                    up    ="  0,   1,    0"/>
+        </transform>
+        <sampler type="independent">  <!-- ldsampler -->
+            <integer name="sample_count" value="$spp"/>
+        </sampler>
+        <film type="streakhdrfilm" name="streakfilm">
+            <integer name="width" value="$res"/>
+            <integer name="height" value="$res"/>
+            <integer name="time" value="400"/>
+            <float name="exposure_time" value="8"/>
+            <float name="time_offset" value="500"/>
+            <rfilter name="rfilter" type="gaussian"/>
+            <boolean name="high_quality_edges" value="true"/>
+        </film>
+    </sensor>
 </scene>
 ```
 

@@ -32,6 +32,18 @@ public:
      *
      * \param time_resolution
      *    Specifies the temporal dimension of the Streak Film.
+     * 
+     * \param freq_resolution
+     *    Specifies the frequency resolution of the Streak Film, only if \c freq_transform 
+     *    is set to true.
+     * 
+     * \param lo_fbound
+     *    Specifies the lowest frequency value stored in the Streak Film, only if
+     *    \c freq_transform is set to true.
+     * 
+     * \param hi_fbound
+     *    Specifies the highest frequency value stored in the Streak Film, only if
+     *    \c freq_transform is set to true.
      *
      * \param exposure_time
      *   Specifies the effective exposure time of every temporal window (time frame).
@@ -72,9 +84,18 @@ public:
      *    sample rays in image space should set this to \c false, since
      *    the samples will eventually be divided by the accumulated
      *    sample weight to remove any non-uniformity.
+     * \param freq_transform
+     *    Apply Fourier transform to the time-resolved samples. This effectively converts
+     *    each x-t streak image to a x-ξ streak image, where ξ is the frequency variable,
+     *    and instead of m_time bins, there will be freq_resolution frequency bins.
      */
+
+    // TODO: all frequency params should be optional
     StreakImageBlock(const ScalarVector2i &size,
                int32_t time,
+               int32_t freq_resolution,
+               float lo_fbound,
+               float hi_fbound,
                float exposure_time,
                float time_offset,
                size_t channel_count,
@@ -83,7 +104,8 @@ public:
                bool warn_negative = true,
                bool warn_invalid = true,
                bool border = true,
-               bool normalize = false);
+               bool normalize = false,
+               bool freq_transform = false);
 
     /// Accumulate another streak image block into this one
     void put(const StreakImageBlock *block);
@@ -161,7 +183,7 @@ public:
     void set_offset(const ScalarPoint2i &offset) { m_offset = offset; }
 
     /// Set the block size. This potentially destroys the block's content.
-    void set_size(const ScalarVector2i &size, int32_t time);
+    void set_size(const ScalarVector2i &size, int32_t depth);
 
     /// Return the current block offset
     const ScalarPoint2i &offset() const { return m_offset; }
@@ -228,7 +250,9 @@ protected:
 protected:
     ScalarPoint2i m_offset;
     ScalarVector2i m_size;
-    int32_t m_time;
+    int32_t m_depth;
+    float m_lo_fbound,
+    float m_hi_fbound,
     float m_exposure_time;
     float m_time_offset;
     uint32_t m_channel_count;
@@ -241,6 +265,7 @@ protected:
     bool m_warn_negative;
     bool m_warn_invalid;
     bool m_normalize;
+    bool m_freq_transform;
 };
 
 MTS_EXTERN_CLASS_RENDER(StreakImageBlock)

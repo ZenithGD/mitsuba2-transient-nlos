@@ -6,15 +6,17 @@ NAMESPACE_BEGIN(mitsuba)
 
 MTS_VARIANT
 StreakImageBlock<Float, Spectrum>::StreakImageBlock(
-    const ScalarVector2i &size, int32_t time, float exposure_time,
+    const ScalarVector2i &size, int32_t time, int32_t freq_resolution,
+    float lo_fbound, float hi_fbound, float exposure_time,
     float time_offset, size_t channel_count, const ReconstructionFilter *filter,
     const ReconstructionFilter *time_filter, bool warn_negative,
-    bool warn_invalid, bool border, bool normalize)
-    : m_offset(0), m_size(0), m_time(0), m_exposure_time(exposure_time),
+    bool warn_invalid, bool border, bool normalize, bool freq_transform)
+    : m_offset(0), m_size(0), m_time(0), m_freq_resolution(0), 
+      m_lo_fbound(lo_fbound), m_hi_fbound(hi_fbound), m_exposure_time(exposure_time),
       m_time_offset(time_offset), m_channel_count((uint32_t) channel_count),
       m_filter(filter), m_time_filter(time_filter), m_weights_x(nullptr),
       m_weights_y(nullptr), m_warn_negative(warn_negative),
-      m_warn_invalid(warn_invalid), m_normalize(normalize) {
+      m_warn_invalid(warn_invalid), m_normalize(normalize), m_freq_transform(freq_transform) {
 
     m_border_size = (uint32_t)((filter != nullptr && border) ? filter->border_size() : 0);
     m_time_border_size = (uint32_t)((time_filter != nullptr && border) ? time_filter->border_size() : 0);
@@ -28,7 +30,8 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
 
     // TODO(jorge): initialize also the time_filter
 
-    set_size(size, time);
+    // set size depending on the frequency resolution if freq transform is enabled
+    set_size(size, freq_transform ? freq_resolution : time);
 }
 
 MTS_VARIANT StreakImageBlock<Float, Spectrum>::~StreakImageBlock() {
@@ -48,12 +51,13 @@ MTS_VARIANT void StreakImageBlock<Float, Spectrum>::clear() {
 
 MTS_VARIANT void
 StreakImageBlock<Float, Spectrum>::set_size(const ScalarVector2i &size,
-                                            const int32_t time) {
-    if ((size == m_size) && (time == m_time))
+                                            const int32_t depth) {
+    if ((size == m_size) && (depth == m_depth))
         return;
     m_size = size;
-    m_time = time;
-    m_data = empty<DynamicBuffer<Float>>(m_channel_count * time *
+    m_depth = depth;
+        
+    m_data = empty<DynamicBuffer<Float>>(m_channel_count * depth *
                                          hprod(size + 2 * m_border_size));
 }
 MTS_VARIANT void
