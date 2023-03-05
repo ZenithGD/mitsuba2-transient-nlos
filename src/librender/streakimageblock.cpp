@@ -2,6 +2,9 @@
 #include <mitsuba/core/profiler.h>
 #include <mitsuba/render/streakimageblock.h>
 
+// use Enoki complex numbers instead of std ones
+#include <enoki/complex.h>
+
 NAMESPACE_BEGIN(mitsuba)
 
 MTS_VARIANT
@@ -11,7 +14,7 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
     float time_offset, size_t channel_count, const ReconstructionFilter *filter,
     const ReconstructionFilter *time_filter, bool warn_negative,
     bool warn_invalid, bool border, bool normalize, bool freq_transform)
-    : m_offset(0), m_size(0), m_time(0), m_freq_resolution(0), 
+    : m_offset(0), m_size(0), m_depth(0), m_time(time), m_freq_resolution(0), 
       m_lo_fbound(lo_fbound), m_hi_fbound(hi_fbound), m_exposure_time(exposure_time),
       m_time_offset(time_offset), m_channel_count((uint32_t) channel_count),
       m_filter(filter), m_time_filter(time_filter), m_weights_x(nullptr),
@@ -93,6 +96,13 @@ StreakImageBlock<Float, Spectrum>::put(const StreakImageBlock *block) {
             ScalarVector2i(0), source_offset - target_offset,
             source_size, channel_count());
     }
+}
+
+// compute one term of the sum approximation of the integral Fourier Transform.
+Complex<Float> ft_partial_term(Float value, Float t, Float freq) {
+
+    Complex<Float> I(0.0f, 1.0f); 
+    return value * exp(-2 * M_PI * I * freq * t);
 }
 
 MTS_VARIANT void
@@ -212,6 +222,9 @@ MTS_VARIANT DynamicBuffer<Float> StreakImageBlock<Float, Spectrum>::data(int sli
 MTS_VARIANT std::string StreakImageBlock<Float, Spectrum>::to_string() const {
     std::ostringstream oss;
     oss << "StreakImageBlock[" << std::endl
+        << "  freq_transform = " << std::boolalpha << m_freq_transform << std::endl 
+        << "  lo_fbound = " << std::boolalpha << m_lo_fbound << std::endl
+        << "  hi_fbound = " << std::boolalpha << m_hi_fbound << std::endl
         << "  offset = " << m_offset << "," << std::endl
         << "  size = " << m_size << "," << std::endl
         << "  time = " << m_time << "," << std::endl

@@ -17,12 +17,21 @@
 NAMESPACE_BEGIN(mitsuba)
 
 MTS_VARIANT StreakFilm<Float, Spectrum>::StreakFilm(const Properties &props) : Base(props) {
+
     // NOTE(diego): old names are included for compatibility with old files
     m_num_bins = props.int_("num_bins", props.int_("time", 1000));
     m_bin_width_opl =
         props.float_("bin_width_opl", props.float_("exposure_time", -1.f));
     m_start_opl = props.float_("start_opl", props.float_("time_offset", -1.f));
     m_auto_detect_bins = props.bool_("auto_detect_bins", false);
+    m_freq_transform = props.bool_("freq_transform", false);
+    
+    // If frequency transform is enabled, initialize bounds
+    if ( m_freq_transform ) {
+        m_lo_fbound = props.float_("lo_fbound", 1.0);
+        m_hi_fbound = props.float_("hi_fbound", 10.0);
+        Assert(m_lo_fbound <= m_hi_fbound);
+    }
     Assert(!m_auto_detect_bins || m_start_opl < 0.f);
 
     // Use the provided reconstruction filter, if any.
@@ -44,6 +53,8 @@ MTS_VARIANT StreakFilm<Float, Spectrum>::StreakFilm(const Properties &props) : B
         m_time_filter =
             PluginManager::instance()->create_object<ReconstructionFilter>(Properties("gaussian"));
     }
+
+    std::cout << this->to_string() << std::endl;
 }
 
 MTS_VARIANT StreakFilm<Float, Spectrum>::~StreakFilm() {}
@@ -159,6 +170,9 @@ MTS_VARIANT void StreakFilm<Float, Spectrum>::auto_detect_bins(Scene *scene,
 MTS_VARIANT std::string StreakFilm<Float, Spectrum>::to_string() const {
     std::ostringstream oss;
     oss << "StreakFilm[" << std::endl
+        << "  freq_transform =" << std::boolalpha << m_freq_transform << std::endl
+        << "  lo_fbound =" << m_lo_fbound << std::endl
+        << "  hi_fbound =" << m_hi_fbound << std::endl
         << "  size = " << m_size << "," << std::endl
         << "  crop_size = " << m_crop_size << "," << std::endl
         << "  crop_offset = " << m_crop_offset << "," << std::endl

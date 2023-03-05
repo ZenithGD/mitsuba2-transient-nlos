@@ -133,8 +133,10 @@ MTS_VARIANT bool TransientSamplingIntegrator<Float, Spectrum>::render(Scene *sce
             [&](const tbb::blocked_range<size_t> &range) {
                 ScopedSetThreadEnvironment set_env(env);
                 ref<Sampler> sampler        = sensor->sampler()->clone();
+                
+                // to be changed
                 ref<StreakImageBlock> block = new StreakImageBlock(
-                    m_block_size, film->num_bins(), film->bin_width_opl(),
+                    m_block_size, film->num_bins(), film->num_bins(), 1.0, 1E10, film->bin_width_opl(),
                     film->start_opl(), channels.size(),
                     film->reconstruction_filter(),
                     film->time_reconstruction_filter(), !has_aovs);

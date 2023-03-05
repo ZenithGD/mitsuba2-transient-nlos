@@ -30,7 +30,7 @@ public:
      *    Specifies the block dimensions (not accounting for additional
      *    border pixels required to support image reconstruction filters).
      *
-     * \param time_resolution
+     * \param time
      *    Specifies the temporal dimension of the Streak Film.
      * 
      * \param freq_resolution
@@ -251,8 +251,10 @@ protected:
     ScalarPoint2i m_offset;
     ScalarVector2i m_size;
     int32_t m_depth;
-    float m_lo_fbound,
-    float m_hi_fbound,
+    int32_t m_time;
+    int32_t m_freq_resolution;
+    float m_lo_fbound;
+    float m_hi_fbound;
     float m_exposure_time;
     float m_time_offset;
     uint32_t m_channel_count;

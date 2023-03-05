@@ -71,10 +71,12 @@ class StreakHDRFilm final : public StreakFilm<Float, Spectrum> {
 public:
     MTS_IMPORT_BASE(StreakFilm, m_size, m_crop_size, m_crop_offset, m_num_bins,
                     m_bin_width_opl, m_start_opl, m_auto_detect_bins,
-                    m_high_quality_edges, m_filter, m_time_filter)
+                    m_high_quality_edges, m_freq_transform, m_lo_fbound, m_hi_fbound,
+                    m_filter, m_time_filter)
     MTS_IMPORT_TYPES(ReconstructionFilter, StreakImageBlock, ImageBlock)
 
     StreakHDRFilm(const Properties &props) : Base(props) {
+
         std::string file_format = string::to_lower(
             props.string("file_format", "openexr"));
         std::string pixel_format = string::to_lower(
@@ -173,6 +175,9 @@ public:
 
         m_storage = new StreakImageBlock(m_crop_size,
                                          m_num_bins,
+                                         m_num_bins, //To be changed
+                                         1.0,
+                                         1E10,
                                          m_bin_width_opl,
                                          m_start_opl,
                                          channels.size());

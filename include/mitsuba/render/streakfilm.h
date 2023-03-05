@@ -72,6 +72,9 @@ protected:
     float m_bin_width_opl;
     float m_start_opl;
     bool m_auto_detect_bins;
+    bool m_freq_transform;
+    float m_lo_fbound;
+    float m_hi_fbound;
     /// NOTE(diego): this is not implemented (yet)
     ref<ReconstructionFilter> m_time_filter;
 };
