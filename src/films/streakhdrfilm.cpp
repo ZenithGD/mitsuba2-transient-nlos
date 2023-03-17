@@ -77,6 +77,8 @@ public:
 
     StreakHDRFilm(const Properties &props) : Base(props) {
 
+        std::cout << props << std::endl;
+
         std::string file_format = string::to_lower(
             props.string("file_format", "openexr"));
         std::string pixel_format = string::to_lower(
@@ -180,7 +182,8 @@ public:
                                          1E10,
                                          m_bin_width_opl,
                                          m_start_opl,
-                                         channels.size());
+                                         channels.size(),
+                                         m_freq_transform);
         m_storage->set_offset(m_crop_offset);
         m_storage->clear();
         m_channels = channels;

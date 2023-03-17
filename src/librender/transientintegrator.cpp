@@ -136,8 +136,9 @@ MTS_VARIANT bool TransientSamplingIntegrator<Float, Spectrum>::render(Scene *sce
                 
                 // to be changed
                 ref<StreakImageBlock> block = new StreakImageBlock(
-                    m_block_size, film->num_bins(), film->num_bins(), 1.0, 1E10, film->bin_width_opl(),
+                    m_block_size, film->num_bins(), film->num_bins(), film->lo_fbound(), film->hi_fbound(), film->bin_width_opl(),
                     film->start_opl(), channels.size(),
+                    film->freq_transform(),
                     film->reconstruction_filter(),
                     film->time_reconstruction_filter(), !has_aovs);
                 scoped_flush_denormals flush_denormals(true);
@@ -187,14 +188,13 @@ MTS_VARIANT bool TransientSamplingIntegrator<Float, Spectrum>::render(Scene *sce
         if (samples_per_pass != 1)
             idx /= (uint32_t) samples_per_pass;
 
-        ref<StreakImageBlock> block = new StreakImageBlock(m_block_size,
-                                                           film->num_bins(),
-                                                           film->bin_width_opl(),
-                                                           film->start_opl(),
-                                                           channels.size(),
-                                                           film->reconstruction_filter(),
-                                                           film->time_reconstruction_filter(),
-                                                           !has_aovs);
+        ref<StreakImageBlock> block = new StreakImageBlock(
+                    m_block_size, film->num_bins(), film->num_bins(), film->lo_fbound(), film->hi_fbound(), film->bin_width_opl(),
+                    film->start_opl(), channels.size(),
+                    film->freq_transform(),
+                    film->reconstruction_filter(),
+                    film->time_reconstruction_filter(), !has_aovs);
+
         block->clear();
         block->set_offset(sensor->film()->crop_offset());
 

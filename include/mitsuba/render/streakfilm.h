@@ -54,6 +54,26 @@ public:
         return m_time_filter.get();
     }
 
+    /**
+     * @brief Return whether the film applies a Fourier Transform on the streak film.
+     * 
+     * @return m_freq_transform
+     */
+    inline bool freq_transform() const { return m_freq_transform; }
+    
+    /**
+     * @brief Return the lower frequency bound. Only valid if m_freq_transform is set to true
+     * 
+     * @return Float m_lo_fbound
+     */
+    inline Float lo_fbound() const { return m_lo_fbound; }
+
+    /**
+     * @brief Return the higher frequency bound. Only valid if m_freq_transform is set to true
+     * 
+     * @return Float m_hi_fbound
+     */
+    inline Float hi_fbound() const { return m_hi_fbound; }
     //! @}
     // =============================================================
 

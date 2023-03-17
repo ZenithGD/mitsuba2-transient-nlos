@@ -11,15 +11,15 @@ MTS_VARIANT
 StreakImageBlock<Float, Spectrum>::StreakImageBlock(
     const ScalarVector2i &size, int32_t time, int32_t freq_resolution,
     float lo_fbound, float hi_fbound, float exposure_time,
-    float time_offset, size_t channel_count, const ReconstructionFilter *filter,
+    float time_offset, size_t channel_count, bool freq_transform, const ReconstructionFilter *filter,
     const ReconstructionFilter *time_filter, bool warn_negative,
-    bool warn_invalid, bool border, bool normalize, bool freq_transform)
+    bool warn_invalid, bool border, bool normalize)
     : m_offset(0), m_size(0), m_depth(0), m_time(time), m_freq_resolution(0), 
       m_lo_fbound(lo_fbound), m_hi_fbound(hi_fbound), m_exposure_time(exposure_time),
       m_time_offset(time_offset), m_channel_count((uint32_t) channel_count),
-      m_filter(filter), m_time_filter(time_filter), m_weights_x(nullptr),
+      m_freq_transform(freq_transform), m_filter(filter), m_time_filter(time_filter), m_weights_x(nullptr),
       m_weights_y(nullptr), m_warn_negative(warn_negative),
-      m_warn_invalid(warn_invalid), m_normalize(normalize), m_freq_transform(freq_transform) {
+      m_warn_invalid(warn_invalid), m_normalize(normalize){
 
     m_border_size = (uint32_t)((filter != nullptr && border) ? filter->border_size() : 0);
     m_time_border_size = (uint32_t)((time_filter != nullptr && border) ? time_filter->border_size() : 0);
@@ -99,10 +99,10 @@ StreakImageBlock<Float, Spectrum>::put(const StreakImageBlock *block) {
 }
 
 // compute one term of the sum approximation of the integral Fourier Transform.
+template <typename Float>
 Complex<Float> ft_partial_term(Float value, Float t, Float freq) {
-
     Complex<Float> I(0.0f, 1.0f); 
-    return value * exp(-2 * M_PI * I * freq * t);
+    return value * exp(-2.0f * M_PI * I * freq * t);
 }
 
 MTS_VARIANT void
@@ -155,6 +155,8 @@ StreakImageBlock<Float, Spectrum>::put(
         // Convert to pixel coordinates within the image block
         Point2f pos = pos_ - (m_offset - m_border_size + .5f);
 
+        //Float freq = m_lo_fbound + (float)i * (m_hi_fbound - m_lo_fbound) / (float)m_time;
+
         if (filter_radius > 0.5f + math::RayEpsilon<Float>) {
             // Determine the affected range of pixels
             Point2u lo = Point2u(max(ceil2int<Point2i>(pos - filter_radius), 0)),
@@ -192,21 +194,36 @@ StreakImageBlock<Float, Spectrum>::put(
                 ENOKI_NOUNROLL for (uint32_t xr = 0; xr < n; ++xr) {
                     UInt32 x      = lo.x() + xr;
                     UInt32 offset = m_channel_count * (y * size.x() * m_time +
-                                                       x * m_time + pos_sensor_int);
+                                                    x * m_time + pos_sensor_int);
                     Float weight  = m_weights_y[yr] * m_weights_x[xr];
 
                     enabled &= x <= hi.x();
                     ENOKI_NOUNROLL for (uint32_t k = 0; k < m_channel_count; ++k)
-                        scatter_add(m_data, radiance_sample.values[k] * weight, offset + k, enabled);
+
+                        if ( m_freq_transform ) {
+                            //hardcoded at the moment
+                            Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, m_time, 1.0);
+                            scatter_add(m_data, real(ft), offset + k, enabled);
+                        } else {
+                            scatter_add(m_data, radiance_sample.values[k], offset + k, enabled);
+                        }
                 }
             }
         } else {
             Point2u lo    = ceil2int<Point2i>(pos - .5f);
             UInt32 offset = m_channel_count * (lo.y() * size.x() * m_time +
-                                               lo.x() * m_time + pos_sensor_int);
+                                            lo.x() * m_time + pos_sensor_int);
             Mask enabled  = active && all(lo >= 0u && lo < size);
-            ENOKI_NOUNROLL for (uint32_t k = 0; k < m_channel_count; ++k)
-                scatter_add(m_data, radiance_sample.values[k], offset + k, enabled);
+            ENOKI_NOUNROLL for (uint32_t k = 0; k < m_channel_count; ++k) {
+
+                if ( m_freq_transform ) {
+                    //hardcoded at the moment
+                    Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], m_time, 1.0);
+                    scatter_add(m_data, real(ft), offset + k, enabled);
+                } else {
+                    scatter_add(m_data, radiance_sample.values[k], offset + k, enabled);
+                }
+            }
         }
     }
 }

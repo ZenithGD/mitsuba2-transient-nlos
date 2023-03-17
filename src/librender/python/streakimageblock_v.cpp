@@ -5,13 +5,13 @@
 MTS_PY_EXPORT(StreakImageBlock) {
     MTS_PY_IMPORT_TYPES(StreakImageBlock, ReconstructionFilter)
     MTS_PY_CLASS(StreakImageBlock, Object)
-        .def(py::init<const ScalarVector2i &, int32_t, int32_t, float, float, float, float, size_t,
+        .def(py::init<const ScalarVector2i &, int32_t, int32_t, float, float, float, float, size_t, bool,
                 const ReconstructionFilter *, const ReconstructionFilter *,
-                bool, bool, bool, bool, bool>(),
+                bool, bool, bool, bool>(),
             "size"_a, "time"_a, "freq_resolution"_a, "lo_fbound"_a, "hi_fbound"_a, 
-            "exposure_time"_a, "time_offset"_a, "channel_count"_a, "filter"_a = nullptr,
+            "exposure_time"_a, "time_offset"_a, "channel_count"_a, "freq_transform"_a, "filter"_a = nullptr,
             "time_filter"_a = nullptr, "warn_negative"_a = true, "warn_invalid"_a = true,
-            "border"_a = true, "normalize"_a = false, "freq_transform"_a = false)
+            "border"_a = true, "normalize"_a = false)
         .def("put", py::overload_cast<const StreakImageBlock *>(&StreakImageBlock::put),
             D(StreakImageBlock, put), "block"_a)
         /**

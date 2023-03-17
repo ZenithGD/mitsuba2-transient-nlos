@@ -53,6 +53,11 @@ public:
      *
      * \param channel_count
      *    Specifies the number of image channels.
+     * 
+     * \param freq_transform
+     *    Apply Fourier transform to the time-resolved samples. This effectively converts
+     *    each x-t streak image to a x-ξ streak image, where ξ is the frequency variable,
+     *    and instead of m_time bins, there will be freq_resolution frequency bins.
      *
      * \param filter
      *    Pointer to the film's reconstruction filter. If passed, it is used to
@@ -84,10 +89,6 @@ public:
      *    sample rays in image space should set this to \c false, since
      *    the samples will eventually be divided by the accumulated
      *    sample weight to remove any non-uniformity.
-     * \param freq_transform
-     *    Apply Fourier transform to the time-resolved samples. This effectively converts
-     *    each x-t streak image to a x-ξ streak image, where ξ is the frequency variable,
-     *    and instead of m_time bins, there will be freq_resolution frequency bins.
      */
 
     // TODO: all frequency params should be optional
@@ -99,13 +100,13 @@ public:
                float exposure_time,
                float time_offset,
                size_t channel_count,
+               bool freq_transform,
                const ReconstructionFilter *filter = nullptr,
                const ReconstructionFilter *time_filter = nullptr,
                bool warn_negative = true,
                bool warn_invalid = true,
                bool border = true,
-               bool normalize = false,
-               bool freq_transform = false);
+               bool normalize = false);
 
     /// Accumulate another streak image block into this one
     void put(const StreakImageBlock *block);

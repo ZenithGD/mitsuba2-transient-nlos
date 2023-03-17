@@ -31,7 +31,12 @@ MTS_VARIANT StreakFilm<Float, Spectrum>::StreakFilm(const Properties &props) : B
         m_lo_fbound = props.float_("lo_fbound", 1.0);
         m_hi_fbound = props.float_("hi_fbound", 10.0);
         Assert(m_lo_fbound <= m_hi_fbound);
+    } else {
+        // properties are unnecessary here
+        props.mark_queried("lo_fbound");
+        props.mark_queried("hi_fbound");
     }
+
     Assert(!m_auto_detect_bins || m_start_opl < 0.f);
 
     // Use the provided reconstruction filter, if any.
