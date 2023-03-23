@@ -6,6 +6,7 @@ import pytest
 import enoki as ek
 import mitsuba
 
+mitsuba.set_variant("scalar_rgb")
 
 def check_value(im, arr, atol=1e-9):
     vals = np.array(im.data(), copy=False)\
@@ -271,3 +272,50 @@ def test07_data_slice(variant_scalar_rgb):
                     f'Height {h} Time {k} Channel {l}:\n' + str(vals[:, k, l]) + '\n\n' + str(ref2[:, k, l])
 
 # TODO: missing test with Packet and Spectral
+
+def test08_freq_streakimageblock(variant_scalar_rgb):
+    from mitsuba.core import srgb_to_xyz
+    from mitsuba.core.xml import load_string
+    from mitsuba.render import StreakImageBlock
+
+    # Recall that we must pass a reconstruction filter to use the `put` methods.
+    rfilter = load_string("""<rfilter version="2.0.0" type="box">
+                                <float name="radius" value="0"/>
+                             </rfilter>""")
+    exposure_time = 2
+    sim = StreakImageBlock(
+        size=[2, 2],
+        time=2,
+        freq_resolution=3,
+        lo_fbound=-10,
+        hi_fbound=10,
+        exposure_time=exposure_time,
+        time_offset=0,
+        channel_count=5,
+        freq_transform=False,
+        filter=rfilter
+    )
+    sim.clear()
+
+    # From a spectrum & alpha value
+    border = sim.border_size()
+    ref = np.zeros(shape=(sim.height() + 2 * border,
+                          sim.width() + 2 * border,
+                          sim.time(),
+                          3 + 1 + 1))
+    for i in range(border, sim.height() + border):
+        for j in range(border, sim.width() + border):
+            for k in range(0, sim.time()):
+                spectrum = np.array([1, 1, 1])
+                ref[i, j, k, :3] = spectrum
+                ref[i, j, k, 3] = 1  # Alpha
+                ref[i, j, k, 4] = 1  # Weight
+                # To avoid the effects of the reconstruction filter (simpler test),
+                # we'll just add one sample right in the center of each pixel.
+                sim.put([j + 0.5, i + 0.5], [(k*exposure_time, spectrum, True)])
+
+    print("testing")
+    print(sim.data())
+    print(ref)
+
+test08_freq_streakimageblock("scalar_rgb")

@@ -9,6 +9,17 @@
 
 Mitsuba 2, extended for transient path tracing and non-line-of-sight data capture.
 
+## Installation and requirements
+
+This fork of Mitsuba has only be tested on Linux. Things might break on other OS!
+
+HDF5 is also used as a way of storing data without resorting to image oriented formats, bypassing any restrictions on the precision and range of the values stored on the file. For this reason, you must have HDF5 installed on you machine.
+
+You can install Mitsuba easily with the `install.sh` and `build.sh` scripts. They will install **almost** all the requirements, you'll have to install the following additional requirements in order to build Mitsuba correctly:
+
+- Half precision floating point library: `half.hpp`
+    Storing half precision floats saves a lot of space (this is how EXR stores the colour data). You must install the `half.hpp` header found [here](https://sourceforge.net/projects/half/) on your `/usr/local/include` folder.
+
 ## Documentation and usage
 
 **See 

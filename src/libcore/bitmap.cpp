@@ -12,6 +12,13 @@
 /* libpng */
 #include <png.h>
 
+/* hdf5 highfive */
+#include <highfive/H5DataSet.hpp>
+#include <highfive/H5DataSpace.hpp>
+#include <highfive/H5DataType.hpp>
+#include <highfive/H5File.hpp>
+#include <highfive/bits/H5DataType_misc.hpp>
+
 /* libjpeg */
 extern "C" {
     #include <jpeglib.h>
@@ -53,6 +60,8 @@ extern "C" {
 #elif defined(__GNUG__)
 #  pragma GCC diagnostic pop
 #endif
+
+#define DATASET_NAME "hdf5"
 
 NAMESPACE_BEGIN(mitsuba)
 
@@ -688,6 +697,8 @@ void Bitmap::read(Stream *stream, FileFormat format) {
     if (format == FileFormat::Auto)
         format = detect_file_format(stream);
 
+    auto fs = dynamic_cast<FileStream *>(stream);
+
     switch (format) {
         case FileFormat::BMP:     read_bmp(stream);     break;
         case FileFormat::JPEG:    read_jpeg(stream);    break;
@@ -697,6 +708,7 @@ void Bitmap::read(Stream *stream, FileFormat format) {
         case FileFormat::PPM:     read_ppm(stream);     break;
         case FileFormat::TGA:     read_tga(stream);     break;
         case FileFormat::PNG:     read_png(stream);     break;
+        case FileFormat::HDF5:    read_hdf5(fs->path().string());    break;
         default:
             Throw("Bitmap: Unknown file format!");
     }
@@ -724,6 +736,8 @@ Bitmap::FileFormat Bitmap::detect_file_format(Stream *stream) {
         format = FileFormat::PNG;
     } else if (Imf::isImfMagic((const char *) start)) {
         format = FileFormat::OpenEXR;
+    } else if (start[1] == 'H' && start[2] == 'D' && start[3] == 'F') {
+        format = FileFormat::HDF5;
     } else {
         // Check for a TGAv2 file
         char footer[18];
@@ -737,6 +751,7 @@ Bitmap::FileFormat Bitmap::detect_file_format(Stream *stream) {
 }
 
 void Bitmap::write(const fs::path &path, FileFormat format, int quality) const {
+    
     ref<FileStream> fs = new FileStream(path, FileStream::ETruncReadWrite);
     write(fs, format, quality);
 }
@@ -761,6 +776,8 @@ void Bitmap::write(Stream *stream, FileFormat format, int quality) const {
             format = FileFormat::PFM;
         else if (extension == ".ppm")
             format = FileFormat::PPM;
+        else if (extension == ".hdf5")
+            format = FileFormat::HDF5;
         else
             Throw("Bitmap::write(): unsupported bitmap file extension \"%s\"",
                   extension);
@@ -801,8 +818,13 @@ void Bitmap::write(Stream *stream, FileFormat format, int quality) const {
             write_pfm(stream);
             break;
 
+        case FileFormat::HDF5:
+            // Handled with path directly since streams are incompatible with HDF5 files
+            write_hdf5(fs->path());
+            break;
+
         default:
-            Throw("Bitmap::write(): Invalid file format!");
+            Throw("Bitmap::write(): Invalid file format! Encountered %s", format);
     }
 }
 
@@ -2253,6 +2275,8 @@ void Bitmap::write_pfm(Stream *stream) const {
     }
 }
 
+
+
 // -----------------------------------------------------------------------------
 //   BMP bitmap I/O
 // -----------------------------------------------------------------------------
@@ -2435,6 +2459,127 @@ void Bitmap::read_tga(Stream *stream) {
         stream->set_byte_order(byte_order);
     } catch (...) {
         stream->set_byte_order(byte_order);
+        throw;
+    }
+}
+
+template <typename Float>
+uint8_t* read_hdf5_helper(HighFive::DataSet& dataset, const std::vector<size_t>& dims) {
+
+    // Read back, with allocating:
+    auto float_data = dataset.read<std::vector<std::vector<std::vector<Float>>>>();
+    auto size_in_bytes = dataset.getElementCount();
+    
+    // Note: There is surely a faster way, this one is easier for now
+    auto data_ptr = new Float[size_in_bytes];
+    uint32_t idx = 0;
+    for ( uint32_t i = 0; i < dims[0]; i++ ) {
+        for ( uint32_t j = 0; j < dims[1]; j++ ) {
+            for ( uint32_t k = 0; k < dims[2]; k++ ) {
+                data_ptr[idx++] = float_data[i][j][k];
+            }
+        }
+    }
+
+    return (uint8_t*)data_ptr;
+}
+
+
+void Bitmap::read_hdf5(const std::string& path) {
+
+    // We open the file as read-only:
+    HighFive::File file(path, HighFive::File::ReadOnly);
+    auto dataset = file.getDataSet(DATASET_NAME);
+
+    HighFive::Attribute type_attr = dataset.getAttribute("type");
+    std::string type;
+    type_attr.read(type);
+
+    // find size
+    auto dims = dataset.getDimensions();
+    if ( dims.size() != 3 ) {
+        Throw("Wrong dimension number! Expected 3, found %d", dims.size());
+    }
+
+    m_size = Vector2u((uint32_t) dims[1], (uint32_t) dims[0]);
+
+    if ( type == "float32" )
+        m_component_format = Struct::Type::Float32;
+    else if ( type == "float16" )
+        m_component_format = Struct::Type::Float16;
+
+    m_srgb_gamma = true;
+    m_premultiplied_alpha = false;
+    // TODO: add hdf5 attributes for option propagation
+    m_pixel_format = PixelFormat::RGB;
+
+    rebuild_struct();
+
+    uint8_t* data_ptr;
+    if ( m_component_format == Struct::Type::Float32 ) {
+        data_ptr = read_hdf5_helper<float>(dataset, dims);
+    }
+    else if ( m_component_format == Struct::Type::Float16 ) {
+        data_ptr = read_hdf5_helper<HighFive::float16_t>(dataset, dims);
+    }
+
+    m_data = std::unique_ptr<uint8_t[]>((uint8_t*)data_ptr);
+}
+
+template <typename Float>
+void write_hdf5_helper(HighFive::File& file, const std::vector<size_t>& dims, const Struct::Type& type, const uint8_t* data) {
+    // Create the dataset
+    HighFive::DataSet dataset = file.createDataSet<Float>(DATASET_NAME, HighFive::DataSpace(dims));
+
+    std::vector<std::vector<std::vector<Float>>> float_data(
+        dims[0], std::vector<std::vector<Float>>(
+            dims[1], std::vector<Float>(dims[2])));
+
+    const Float* raw_data = (const Float*)data;
+    // create floating point representation from uint data
+
+    uint32_t idx = 0;
+    for ( uint32_t i = 0; i < dims[0]; i++ ) {
+        for ( uint32_t j = 0; j < dims[1]; j++ ) {
+            for ( uint32_t k = 0; k < dims[2]; k++ ) {
+                float_data[i][j][k] = raw_data[idx++];
+            }
+        }
+    }
+
+    std::string type_str;
+    if ( type == Struct::Type::Float32 )
+        type_str = "float32";
+    else if ( type == Struct::Type::Float16 )
+        type_str = "float16";
+
+    HighFive::Attribute type_attr = dataset.createAttribute<std::string>("type",
+                                                           HighFive::DataSpace::From(type_str));
+    type_attr.write(type_str);
+    dataset.write(float_data);
+}
+
+void Bitmap::write_hdf5(const std::string& path) const {
+    
+    if (m_component_format != Struct::Type::Float32 && m_component_format != Struct::Type::Float16)
+
+        Throw("write_hdf5(): component format must be Float16 or Float32! Found %s instead.", m_component_format);
+
+    try {
+        // create HDF5 file
+        HighFive::File file(path, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate);
+
+        std::vector<size_t> dims{height(), width(), channel_count()};
+
+        if ( m_component_format == Struct::Type::Float16 ) {
+            write_hdf5_helper<HighFive::float16_t>(file, dims, m_component_format, uint8_data());
+        }
+        else if ( m_component_format == Struct::Type::Float32 ) {
+            write_hdf5_helper<float>(file, dims, m_component_format, uint8_data());
+        }
+
+
+    } catch (...) {
         throw;
     }
 }

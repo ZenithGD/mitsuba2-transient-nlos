@@ -22,16 +22,17 @@ MTS_PY_EXPORT(Bitmap) {
         .value("MultiChannel", Bitmap::PixelFormat::MultiChannel, D(Bitmap, PixelFormat, MultiChannel));
 
     py::enum_<Bitmap::FileFormat>(bitmap, "FileFormat", D(Bitmap, FileFormat))
-        .value("PNG",     Bitmap::FileFormat::PNG,     D(Bitmap, FileFormat, PNG))
-        .value("OpenEXR", Bitmap::FileFormat::OpenEXR, D(Bitmap, FileFormat, OpenEXR))
-        .value("RGBE",    Bitmap::FileFormat::RGBE,    D(Bitmap, FileFormat, RGBE))
-        .value("PFM",     Bitmap::FileFormat::PFM,     D(Bitmap, FileFormat, PFM))
-        .value("PPM",     Bitmap::FileFormat::PPM,     D(Bitmap, FileFormat, PPM))
-        .value("JPEG",    Bitmap::FileFormat::JPEG,    D(Bitmap, FileFormat, JPEG))
-        .value("TGA",     Bitmap::FileFormat::TGA,     D(Bitmap, FileFormat, TGA))
-        .value("BMP",     Bitmap::FileFormat::BMP,     D(Bitmap, FileFormat, BMP))
-        .value("Unknown", Bitmap::FileFormat::Unknown, D(Bitmap, FileFormat, Unknown))
-        .value("Auto",    Bitmap::FileFormat::Auto,    D(Bitmap, FileFormat, Auto));
+        .value("PNG",     Bitmap::FileFormat::PNG,      D(Bitmap, FileFormat, PNG))
+        .value("OpenEXR", Bitmap::FileFormat::OpenEXR,  D(Bitmap, FileFormat, OpenEXR))
+        .value("RGBE",    Bitmap::FileFormat::RGBE,     D(Bitmap, FileFormat, RGBE))
+        .value("PFM",     Bitmap::FileFormat::PFM,      D(Bitmap, FileFormat, PFM))
+        .value("PPM",     Bitmap::FileFormat::PPM,      D(Bitmap, FileFormat, PPM))
+        .value("JPEG",    Bitmap::FileFormat::JPEG,     D(Bitmap, FileFormat, JPEG))
+        .value("TGA",     Bitmap::FileFormat::TGA,      D(Bitmap, FileFormat, TGA))
+        .value("BMP",     Bitmap::FileFormat::BMP,      D(Bitmap, FileFormat, BMP))
+        .value("HDF5",    Bitmap::FileFormat::HDF5,     D(Bitmap, FileFormat, HDF5))
+        .value("Unknown", Bitmap::FileFormat::Unknown,  D(Bitmap, FileFormat, Unknown))
+        .value("Auto",    Bitmap::FileFormat::Auto,     D(Bitmap, FileFormat, Auto));
 
     py::enum_<Bitmap::AlphaTransform>(bitmap, "AlphaTransform")
         .value("None",          Bitmap::AlphaTransform::None,

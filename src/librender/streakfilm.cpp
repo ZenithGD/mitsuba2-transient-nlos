@@ -18,8 +18,11 @@ NAMESPACE_BEGIN(mitsuba)
 
 MTS_VARIANT StreakFilm<Float, Spectrum>::StreakFilm(const Properties &props) : Base(props) {
 
+    std::cout << props << std::endl;
+
     // NOTE(diego): old names are included for compatibility with old files
     m_num_bins = props.int_("num_bins", props.int_("time", 1000));
+    m_freq_bins = props.int_("freq_resolution", m_num_bins);
     m_bin_width_opl =
         props.float_("bin_width_opl", props.float_("exposure_time", -1.f));
     m_start_opl = props.float_("start_opl", props.float_("time_offset", -1.f));
@@ -58,8 +61,6 @@ MTS_VARIANT StreakFilm<Float, Spectrum>::StreakFilm(const Properties &props) : B
         m_time_filter =
             PluginManager::instance()->create_object<ReconstructionFilter>(Properties("gaussian"));
     }
-
-    std::cout << this->to_string() << std::endl;
 }
 
 MTS_VARIANT StreakFilm<Float, Spectrum>::~StreakFilm() {}

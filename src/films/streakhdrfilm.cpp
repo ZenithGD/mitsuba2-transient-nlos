@@ -77,8 +77,6 @@ public:
 
     StreakHDRFilm(const Properties &props) : Base(props) {
 
-        std::cout << props << std::endl;
-
         std::string file_format = string::to_lower(
             props.string("file_format", "openexr"));
         std::string pixel_format = string::to_lower(
@@ -94,9 +92,11 @@ public:
             m_file_format = Bitmap::FileFormat::RGBE;
         else if (file_format == "pfm")
             m_file_format = Bitmap::FileFormat::PFM;
+        else if (file_format == "hdf5")
+            m_file_format = Bitmap::FileFormat::HDF5;
         else {
             Throw("The \"file_format\" parameter must either be "
-                  "equal to \"openexr\", \"pfm\", or \"rgbe\","
+                  "equal to \"openexr\", \"pfm\", \"hdf5\" or \"rgbe\","
                   " found %s instead.", file_format);
         }
 
@@ -159,6 +159,8 @@ public:
                            " component_format=\"float32\". Overriding..");
                 m_component_format = Struct::Type::Float32;
             }
+        } else if (m_file_format == Bitmap::FileFormat::HDF5) {
+            // TODO
         }
 
         props.mark_queried("banner"); // no banner in Mitsuba 2
@@ -176,14 +178,14 @@ public:
         }
 
         m_storage = new StreakImageBlock(m_crop_size,
-                                         m_num_bins,
-                                         m_num_bins, //To be changed
-                                         1.0,
-                                         1E10,
+                                         this->num_bins(),
+                                         this->freq_bins(),
+                                         m_lo_fbound,
+                                         m_hi_fbound,
                                          m_bin_width_opl,
                                          m_start_opl,
                                          channels.size(),
-                                         m_freq_transform);
+                                         this->freq_transform());
         m_storage->set_offset(m_crop_offset);
         m_storage->clear();
         m_channels = channels;
@@ -420,6 +422,8 @@ public:
             proper_extension = ".exr";
         else if (m_file_format == Bitmap::FileFormat::RGBE)
             proper_extension = ".rgbe";
+        else if (m_file_format == Bitmap::FileFormat::HDF5)
+            proper_extension = ".hdf5";
         else
             proper_extension = ".pfm";
 

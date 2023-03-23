@@ -44,6 +44,8 @@ public:
 
     size_t num_bins() const { return m_num_bins; }
 
+    size_t freq_bins() const { return m_freq_bins; }
+
     float bin_width_opl() const { return m_bin_width_opl; }
 
     float start_opl() const { return m_start_opl; }
@@ -89,12 +91,19 @@ protected:
 
 protected:
     uint32_t m_num_bins;
+    uint32_t m_freq_bins;
+
+    // The time resolution for each bin, in optical path length
     float m_bin_width_opl;
+
+    // The time offset, in optical path length
     float m_start_opl;
+
     bool m_auto_detect_bins;
     bool m_freq_transform;
     float m_lo_fbound;
     float m_hi_fbound;
+
     /// NOTE(diego): this is not implemented (yet)
     ref<ReconstructionFilter> m_time_filter;
 };

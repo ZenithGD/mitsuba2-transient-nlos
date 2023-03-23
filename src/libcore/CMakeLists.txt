@@ -83,6 +83,8 @@ target_link_libraries(mitsuba-core PRIVATE
   ${ZLIB_LIBRARY}
   # Link to Intel's Thread Building Blocks and the pugixml parser
   tbb pugixml
+  # Link to hdf5
+  hdf5_cpp
   # Image libraries: link to libjpeg, libpng, OpenEXR
   ${PNG_LIBRARIES} ${JPEG_LIBRARIES} IlmImf
 )

@@ -136,7 +136,7 @@ MTS_VARIANT bool TransientSamplingIntegrator<Float, Spectrum>::render(Scene *sce
                 
                 // to be changed
                 ref<StreakImageBlock> block = new StreakImageBlock(
-                    m_block_size, film->num_bins(), film->num_bins(), film->lo_fbound(), film->hi_fbound(), film->bin_width_opl(),
+                    m_block_size, film->num_bins(), film->freq_bins(), film->lo_fbound(), film->hi_fbound(), film->bin_width_opl(),
                     film->start_opl(), channels.size(),
                     film->freq_transform(),
                     film->reconstruction_filter(),
@@ -189,7 +189,7 @@ MTS_VARIANT bool TransientSamplingIntegrator<Float, Spectrum>::render(Scene *sce
             idx /= (uint32_t) samples_per_pass;
 
         ref<StreakImageBlock> block = new StreakImageBlock(
-                    m_block_size, film->num_bins(), film->num_bins(), film->lo_fbound(), film->hi_fbound(), film->bin_width_opl(),
+                    m_block_size, film->num_bins(), film->freq_bins(), film->lo_fbound(), film->hi_fbound(), film->bin_width_opl(),
                     film->start_opl(), channels.size(),
                     film->freq_transform(),
                     film->reconstruction_filter(),

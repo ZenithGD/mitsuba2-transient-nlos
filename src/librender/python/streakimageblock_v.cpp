@@ -26,20 +26,23 @@ MTS_PY_EXPORT(StreakImageBlock) {
                }
                ib.put(pos, wavelengths, values_transformed, alpha);
              }, "pos"_a, "wavelengths"_a, "radianceSamplesRecordVector"_a, "alpha"_a = 1.f)
+        */
         .def("put",
             // TODO(jorge): check if it is possible to declare values as a vector of RadianceSample directly so there is no need to iterate to transform them (an thus, no need for the wrapper)
             // NOTE(diego): array should be of len 4 after XYZAW->XYZA
             [](StreakImageBlock &ib, const Point2f &pos,
                 const std::vector<std::tuple<Float, std::vector<Float>, Mask>> &values) {
-                std::vector<RadianceSample<Float, std::array<Float, 5>>> values_transformed;
+                std::vector<FloatSample<Float>> values_transformed;
                 for(const auto &[time, data, mask] : values) {
-                    std::array<Float, 5> data_array;
-                    std::copy_n(data.begin(), 5, data_array.begin());
-                    values_transformed.emplace_back(time, data_array, mask);
+                    FloatSample<Float> sample(time, mask);
+                    for ( const auto& d : data ) {
+                        sample.push_front(d);
+                    }
+                    values_transformed.emplace_back(sample);
                 }
                 ib.put(pos, values_transformed);
             }, "pos"_a, "values"_a)
-            **/
+        
         .def_method(StreakImageBlock, clear)
         .def_method(StreakImageBlock, set_offset, "offset"_a)
         .def_method(StreakImageBlock, offset)

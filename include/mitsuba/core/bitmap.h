@@ -150,6 +150,11 @@ public:
          */
         BMP,
 
+        /**
+         * @brief Hierarchical Data Format 5
+         */
+        HDF5,
+
         /// Unknown file format
         Unknown,
 
@@ -631,6 +636,23 @@ public:
 
      /// Save a file using the PFM file format
      void write_pfm(Stream *stream) const;
+
+     /// @brief Save a file using the HDF5 format
+     /// Note that this doesn't get a stream as parameter, but rather a path, because 
+     /// Mitsuba stream objects aren't trivially compatible with HighFive file objects.
+     /// TODO(darío): make this method a bit more consistent with the others. 
+     ///
+     /// @param path The file path
+     void write_hdf5(const std::string& path) const;
+
+     /// 
+     /// @brief Read a file encoded using the PFM file format
+     /// Note that this doesn't get a stream as parameter, but rather a path, because 
+     /// Mitsuba stream objects aren't trivially compatible with HighFive file objects.
+     /// TODO(darío): make this method a bit more consistent with the others. 
+     ///
+     /// @param stream The file stream
+     void read_hdf5(const std::string& path);
  protected:
      std::unique_ptr<uint8_t[]> m_data;
      PixelFormat m_pixel_format;

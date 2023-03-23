@@ -757,6 +757,13 @@ The following is supported:
 
 * Loading of uncompressed 8-bit RGB/RGBA files)doc";
 
+static const char *__doc_mitsuba_Bitmap_FileFormat_HDF5 =
+R"doc(Hierarchical Data Format Version 5 (HDF5)
+
+The following is supported:
+
+* Saving Float32 - based RGB bitmaps)doc";
+
 static const char *__doc_mitsuba_Bitmap_FileFormat_Unknown = R"doc(Unknown file format)doc";
 
 static const char *__doc_mitsuba_Bitmap_PixelFormat =
