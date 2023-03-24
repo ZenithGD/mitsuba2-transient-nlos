@@ -5,6 +5,7 @@ import os
 import pytest
 import enoki as ek
 import mitsuba
+import time
 
 mitsuba.set_variant("scalar_rgb")
 
@@ -280,42 +281,82 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
 
     # Recall that we must pass a reconstruction filter to use the `put` methods.
     rfilter = load_string("""<rfilter version="2.0.0" type="box">
-                                <float name="radius" value="0"/>
+                                <float name="radius" value="0.3"/>
                              </rfilter>""")
     exposure_time = 2
     sim = StreakImageBlock(
         size=[2, 2],
-        time=2,
-        freq_resolution=3,
-        lo_fbound=-10,
-        hi_fbound=10,
+        time=5,
+        freq_resolution=4,
+        lo_fbound=-0.25,
+        hi_fbound=0.25,
         exposure_time=exposure_time,
         time_offset=0,
-        channel_count=5,
-        freq_transform=False,
+        channel_count=3,
+        freq_transform=True,
         filter=rfilter
     )
     sim.clear()
 
+    sim_t = StreakImageBlock(
+        size=[2, 2],
+        time=5,
+        freq_resolution=3,
+        lo_fbound=-2,
+        hi_fbound=2,
+        exposure_time=exposure_time,
+        time_offset=0,
+        channel_count=3,
+        freq_transform=False,
+        filter=rfilter
+    )
+    sim_t.clear()
+
+    depth = sim.freq_resolution() if sim.freq_transform() else sim.time()
+
     # From a spectrum & alpha value
     border = sim.border_size()
-    ref = np.zeros(shape=(sim.height() + 2 * border,
-                          sim.width() + 2 * border,
-                          sim.time(),
-                          3 + 1 + 1))
+    refshape = (sim.height() + 2 * border,
+                sim.width() + 2 * border,
+                sim.time(),
+                3)
+    ref = np.zeros(shape=refshape)
     for i in range(border, sim.height() + border):
         for j in range(border, sim.width() + border):
             for k in range(0, sim.time()):
-                spectrum = np.array([1, 1, 1])
-                ref[i, j, k, :3] = spectrum
-                ref[i, j, k, 3] = 1  # Alpha
-                ref[i, j, k, 4] = 1  # Weight
+                spectrum = np.array([1, 1, 0]) #np.random.uniform(size=(3,))
+
+                idx = k
+                ref[i, j, idx, :3] = spectrum
+                #ref[i, j, k, 3] = 1  # Alpha
+                #ref[i, j, k, 4] = 1  # Weight
                 # To avoid the effects of the reconstruction filter (simpler test),
                 # we'll just add one sample right in the center of each pixel.
                 sim.put([j + 0.5, i + 0.5], [(k*exposure_time, spectrum, True)])
+                sim_t.put([j + 0.5, i + 0.5], [(k*exposure_time, spectrum, True)])
 
-    print("testing")
-    print(sim.data())
-    print(ref)
+    sim_shape = (sim.height() + 2 * border,
+                sim.width() + 2 * border,
+                sim.freq_resolution(),
+                3)
+
+    sim_data = np.array(sim.data()).reshape(sim_shape)
+
+    sim_t_shape = (sim_t.height() + 2 * border,
+                sim_t.width() + 2 * border,
+                sim_t.time(),
+                3)
+
+    sim_t_data = np.array(sim_t.data()).reshape(sim_t_shape)
+
+    print("Applying fft to each streak image")
+    ini = time.time()
+
+    print("freqs : ", np.fft.fftfreq(sim.freq_resolution(), exposure_time))
+    transformed = np.fft.fftshift(np.fft.fft(sim_t_data, axis=2, n=sim.freq_resolution()), axes=2)
+    
+    print("arr : ", sim_data)
+    print("ref : ", sim_t_data)
+    print("fft(ref) : ", transformed)
 
 test08_freq_streakimageblock("scalar_rgb")

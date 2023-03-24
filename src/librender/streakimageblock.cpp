@@ -14,12 +14,12 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
     float time_offset, size_t channel_count, bool freq_transform, const ReconstructionFilter *filter,
     const ReconstructionFilter *time_filter, bool warn_negative,
     bool warn_invalid, bool border, bool normalize)
-    : m_offset(0), m_size(0), m_depth(0), m_time(time), m_freq_resolution(0), 
+    : m_offset(0), m_size(0), m_depth(0), m_time(time), m_freq_resolution(freq_resolution), 
       m_lo_fbound(lo_fbound), m_hi_fbound(hi_fbound), m_exposure_time(exposure_time),
       m_time_offset(time_offset), m_channel_count((uint32_t) channel_count),
       m_freq_transform(freq_transform), m_filter(filter), m_time_filter(time_filter), m_weights_x(nullptr),
       m_weights_y(nullptr), m_warn_negative(warn_negative),
-      m_warn_invalid(warn_invalid), m_normalize(normalize){
+      m_warn_invalid(warn_invalid), m_normalize(normalize), m_freqs(m_freq_resolution, 0) {
 
     m_border_size = (uint32_t)((filter != nullptr && border) ? filter->border_size() : 0);
     m_time_border_size = (uint32_t)((time_filter != nullptr && border) ? time_filter->border_size() : 0);
@@ -31,10 +31,16 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
         m_weights_y     = m_weights_x + filter_size;
     }
 
+    if ( m_freq_transform ) {
+        for ( int i = 0; i < m_freq_resolution; i++ ) {
+            m_freqs[i] = m_lo_fbound + (m_hi_fbound - m_lo_fbound) * (float)i / (float)(m_freq_resolution); 
+            std::cout << i << "; " << m_freqs[i] << std::endl;
+        }
+    }
     // TODO(jorge): initialize also the time_filter
 
     // set size depending on the frequency resolution if freq transform is enabled
-    set_size(size, freq_transform ? freq_resolution : time);
+    set_size(size, (freq_transform ? freq_resolution : time));
 }
 
 MTS_VARIANT StreakImageBlock<Float, Spectrum>::~StreakImageBlock() {
@@ -45,7 +51,7 @@ MTS_VARIANT StreakImageBlock<Float, Spectrum>::~StreakImageBlock() {
 }
 
 MTS_VARIANT void StreakImageBlock<Float, Spectrum>::clear() {
-    size_t size = m_channel_count * m_time * hprod(m_size + 2 * m_border_size);
+    size_t size = m_channel_count * m_depth * hprod(m_size + 2 * m_border_size);
     if constexpr (!is_cuda_array_v<Float>)
         memset(m_data.data(), 0, size * sizeof(ScalarFloat));
     else
@@ -62,6 +68,8 @@ StreakImageBlock<Float, Spectrum>::set_size(const ScalarVector2i &size,
         
     m_data = empty<DynamicBuffer<Float>>(m_channel_count * depth *
                                          hprod(size + 2 * m_border_size));
+
+    std::cout << "set_size ok " << std::endl;
 }
 MTS_VARIANT void
 StreakImageBlock<Float, Spectrum>::put(const StreakImageBlock *block) {
@@ -202,7 +210,7 @@ StreakImageBlock<Float, Spectrum>::put(
 
                         if ( m_freq_transform ) {
                             //hardcoded at the moment
-                            Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, m_time, 1.0);
+                            Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl, 1.0);
                             scatter_add(m_data, real(ft), offset + k, enabled);
                         } else {
                             scatter_add(m_data, radiance_sample.values[k], offset + k, enabled);
@@ -211,17 +219,28 @@ StreakImageBlock<Float, Spectrum>::put(
             }
         } else {
             Point2u lo    = ceil2int<Point2i>(pos - .5f);
-            UInt32 offset = m_channel_count * (lo.y() * size.x() * m_time +
+            UInt32 offset = m_channel_count * (lo.y() * size.x() * m_depth +
+                                            lo.x() * m_depth);
+
+            UInt32 time_offset = m_channel_count * (lo.y() * size.x() * m_time +
                                             lo.x() * m_time + pos_sensor_int);
+
             Mask enabled  = active && all(lo >= 0u && lo < size);
             ENOKI_NOUNROLL for (uint32_t k = 0; k < m_channel_count; ++k) {
 
                 if ( m_freq_transform ) {
-                    //hardcoded at the moment
-                    Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], m_time, 1.0);
-                    scatter_add(m_data, real(ft), offset + k, enabled);
+
+                    for ( int f = 0; f < m_freq_resolution; f++ ) {
+
+                        UInt32 freq_offset = offset + m_channel_count * f;
+                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], radiance_sample.opl, m_freqs[f]);
+                        scatter_add(m_data, real(ft), freq_offset + k, enabled);
+                    }
                 } else {
-                    scatter_add(m_data, radiance_sample.values[k], offset + k, enabled);
+                    std::cout << "offset : " << offset + pos_sensor_int * m_channel_count + k << ", "
+                              << "time_offset : " << time_offset + k << std::endl;
+                
+                    scatter_add(m_data, radiance_sample.values[k], time_offset + k, enabled);
                 }
             }
         }

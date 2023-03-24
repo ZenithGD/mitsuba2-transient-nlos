@@ -48,6 +48,8 @@ MTS_PY_EXPORT(StreakImageBlock) {
         .def_method(StreakImageBlock, offset)
         .def_method(StreakImageBlock, size)
         .def_method(StreakImageBlock, time)
+        .def_method(StreakImageBlock, freq_transform)
+        .def_method(StreakImageBlock, freq_resolution)
         .def_method(StreakImageBlock, exposure_time)
         .def_method(StreakImageBlock, time_offset)
         .def_method(StreakImageBlock, width)

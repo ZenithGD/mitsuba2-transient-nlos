@@ -231,6 +231,14 @@ public:
     /// Return the border region used by the reconstruction filter (temporal)
     int time_border_size() const { return m_time_border_size; };
 
+    int freq_resolution() const { return m_freq_resolution; }
+
+    bool freq_transform() const { return m_freq_transform; }
+
+    Float hi_fbound() const { return m_hi_fbound; }
+
+    Float lo_fbound() const { return m_lo_fbound; }
+
     /// Return the underlying pixel buffer
     DynamicBuffer<Float> &data() { return m_data; }
 
@@ -254,8 +262,8 @@ protected:
     int32_t m_depth;
     int32_t m_time;
     int32_t m_freq_resolution;
-    float m_lo_fbound;
-    float m_hi_fbound;
+    Float m_lo_fbound;
+    Float m_hi_fbound;
     float m_exposure_time;
     float m_time_offset;
     uint32_t m_channel_count;
@@ -269,6 +277,7 @@ protected:
     bool m_warn_invalid;
     bool m_normalize;
     bool m_freq_transform;
+    std::vector<Float> m_freqs;
 };
 
 MTS_EXTERN_CLASS_RENDER(StreakImageBlock)

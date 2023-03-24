@@ -6085,6 +6085,9 @@ static const char *__doc_mitsuba_StreakImageBlock_warn_negative = R"doc(Warn whe
 
 static const char *__doc_mitsuba_StreakImageBlock_width = R"doc(Return the bitmap's width in pixels)doc";
 
+static const char *__doc_mitsuba_StreakImageBlock_freq_resolution = R"doc(Return the frequency resolution of the StreakImageBlock, only if freq_transform is set to true.)doc";
+
+static const char *__doc_mitsuba_StreakImageBlock_freq_transform = R"doc(Returns true if the streak image block stores frequency data, false otherwise)doc";
 static const char *__doc_mitsuba_Stream =
 R"doc(Abstract seekable stream class
 
