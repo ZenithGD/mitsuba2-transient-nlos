@@ -18,8 +18,6 @@ NAMESPACE_BEGIN(mitsuba)
 
 MTS_VARIANT StreakFilm<Float, Spectrum>::StreakFilm(const Properties &props) : Base(props) {
 
-    std::cout << props << std::endl;
-
     // NOTE(diego): old names are included for compatibility with old files
     m_num_bins = props.int_("num_bins", props.int_("time", 1000));
     m_freq_bins = props.int_("freq_resolution", m_num_bins);

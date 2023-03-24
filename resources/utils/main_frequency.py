@@ -113,30 +113,7 @@ def write_frames(streakimg_ldr: np.array, folder: str):
         imageio.imwrite(folder + f"/frame_{str(i)}.png", frame)
         print(f"{i}/{number_of_frames}", end="\r")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tool for Frequency Streak Image validation")
-    # Options for reading steady and streak image
-    parser.add_argument('-d', '--dir', type=str, help="Directory where the streak images are stored",
-                        default="cbox")
-
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-r', "--red", action="store_true", help="Show red channel only")
-    group.add_argument('-g', '--green', type=str, help="Show green channel only")
-    group.add_argument('-b', '--blue', type=str, help="Show blue channel only")
-
-    parser.add_argument('-ext', '--extension', type=str, help="Name of the extension of the images", default="exr")
-    # Option to show intermediate result
-    parser.add_argument('-s', '--show', action="store_true", help="Show images or results visually")
-    parser.add_argument('--result', type=str, nargs='+', help="Result: video (v), frames (f)", default=[])
-    parser.add_argument('-e', '--exposure-time', type=float, help="exposure time for each frame, measured in optical length", default=8)
-    args = parser.parse_args()
-
-    # Load streak image
-    print("Loading streak image")
-    streakimg = read_streakimg_mitsuba(args.dir, extension=args.extension)
-
-    streakimg = streakimg[:, :, :, 0]  # only red
-
+def validate(streakimg):
     print("Applying fft to each streak image")
     ini = time.time()
     
@@ -161,7 +138,7 @@ if __name__ == "__main__":
     # 8. Write video of streak image
     if "v" in args.result:
         name_video_file = args.dir + "/streak_video"
-        print("Writing streak image video")
+        print(f"Writing streak image video to {name_video_file}")
 
         write_video_custom(np.real(transformed), filename=name_video_file + "_real")
         write_video_custom(np.imag(transformed), filename=name_video_file + "_imag")
@@ -172,3 +149,52 @@ if __name__ == "__main__":
         print("Writing frames separately")
         write_frames(np.real(transformed), folder=name_folder + "_real")
         write_frames(np.imag(transformed), folder=name_folder + "_imag")
+
+def visualize(streakimg):
+    if "v" in args.result:
+        name_video_file = args.dir + "/streak_video"
+        print(f"Writing streak image video to {name_video_file}")
+
+        write_video_custom(streakimg, filename=name_video_file)
+
+    if "f" in args.result:
+        name_folder = args.dir + "/freq_streak"
+        print("Writing frames separately")
+        write_frames(streakimg, folder=name_folder)
+
+def main(args):
+
+    # Load streak image
+    print("Loading streak image")
+    streakimg = read_streakimg_mitsuba(args.dir, extension=args.extension)
+
+    streakimg = streakimg[:, :, :, 0].astype(np.float32)  # only red
+
+    if args.validate:
+        validate(streakimg)
+    elif args.visualize:
+        visualize(streakimg)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Tool for Frequency Streak Image validation")
+    # Options for reading steady and streak image
+    parser.add_argument('-d', '--dir', type=str, help="Directory where the streak images are stored",
+                        default="cbox")
+
+    task_group = parser.add_mutually_exclusive_group()
+    task_group.add_argument("--validate", action="store_true", help="Show validation video with full frequency spectrum")
+    task_group.add_argument("--visualize", action="store_true", help="Visualize results on ")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-r', "--red", action="store_true", help="Show red channel only")
+    group.add_argument('-g', '--green', type=str, help="Show green channel only")
+    group.add_argument('-b', '--blue', type=str, help="Show blue channel only")
+
+    parser.add_argument('-ext', '--extension', type=str, help="Name of the extension of the images", default="exr")
+    # Option to show intermediate result
+    parser.add_argument('-s', '--show', action="store_true", help="Show images or results visually")
+    parser.add_argument('--result', type=str, nargs='+', help="Result: video (v), frames (f)", default=['v'])
+    parser.add_argument('-e', '--exposure-time', type=float, help="exposure time for each frame, measured in optical length", default=8)
+    args = parser.parse_args()
+
+    main(args)

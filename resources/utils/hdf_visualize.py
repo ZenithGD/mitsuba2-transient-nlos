@@ -24,7 +24,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Visualize HDF data as RGB image")
-    parser.add_argument("infile", type=str, help="The path to the HDF5 file.")
+
+    parser.add_argument("-i", "--infile", type=str, help="The path to the HDF5 directory.")
     parser.add_argument("-d", "--dataset", type=str, help="The dataset to load. Defaults to 'hdf5'.", default="hdf5")
 
     group = parser.add_mutually_exclusive_group()

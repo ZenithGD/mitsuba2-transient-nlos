@@ -826,6 +826,8 @@ void Bitmap::write(Stream *stream, FileFormat format, int quality) const {
         default:
             Throw("Bitmap::write(): Invalid file format! Encountered %s", format);
     }
+    
+    std::cout << "written frame " << fs->path() << std::endl;
 }
 
 void Bitmap::write_async(const fs::path &path_, FileFormat format_, int quality_) const {

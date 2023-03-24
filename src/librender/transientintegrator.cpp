@@ -148,7 +148,8 @@ MTS_VARIANT bool TransientSamplingIntegrator<Float, Spectrum>::render(Scene *sce
                      ++i) {
                     auto [offset, size, block_id] = spiral.next_block();
                     Assert(hprod(size) != 0);
-                    block->set_size(size, film->num_bins());
+                    block->set_size(size, block->length());
+
                     block->set_offset(offset);
                     for (size_t div = 0; div < n_divs && !should_stop();
                          div++) {

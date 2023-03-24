@@ -115,13 +115,20 @@ We provide the `transientpath`, `transientstokes` and `streakhdrfilm` plugins. T
             <integer name="sample_count" value="$spp"/>
         </sampler>
         <film type="streakhdrfilm" name="streakfilm">
+            <string name="file_format" value="hdf5" />
             <integer name="width" value="$res"/>
             <integer name="height" value="$res"/>
-            <integer name="time" value="400"/>
+            <integer name="time" value="380"/>
             <float name="exposure_time" value="8"/>
-            <float name="time_offset" value="500"/>
-            <rfilter name="rfilter" type="gaussian"/>
+            <float name="time_offset" value="520"/>
+            <integer name="freq_resolution" value="2" />
+            <boolean name="freq_transform" value="true" />
+            <float name="lo_fbound" value="-1" />
+            <float name="hi_fbound" value="1" />
             <boolean name="high_quality_edges" value="true"/>
+            <rfilter name="rfilter" type="box">
+                <float name="radius" value="0.3"/>
+            </rfilter>
         </film>
     </sensor>
 </scene>

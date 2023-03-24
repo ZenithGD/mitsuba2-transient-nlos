@@ -50,7 +50,7 @@ MTS_VARIANT StreakImageBlock<Float, Spectrum>::~StreakImageBlock() {
 }
 
 MTS_VARIANT void StreakImageBlock<Float, Spectrum>::clear() {
-    size_t size = m_channel_count * m_depth * hprod(m_size + 2 * m_border_size);
+    size_t size = m_channel_count * length() * hprod(m_size + 2 * m_border_size);
     if constexpr (!is_cuda_array_v<Float>)
         memset(m_data.data(), 0, size * sizeof(ScalarFloat));
     else
@@ -75,9 +75,9 @@ StreakImageBlock<Float, Spectrum>::put(const StreakImageBlock *block) {
     if (unlikely(block->channel_count() != channel_count()))
         Throw("ImageBlock::put(): mismatched channel counts!");
 
-    if (unlikely(block->time() != time() ||
+    if (unlikely(block->length() != length() ||
                  block->exposure_time() != exposure_time()))
-        Throw("ImageBlock::put(): mismatched time or exposure_time!");
+        Throw("ImageBlock::put(): mismatched length or exposure_time!");
 
     ScalarVector2i source_size  = block->size() + 2 * block->border_size(),
                    target_size  = size()        + 2 * border_size();
@@ -85,19 +85,19 @@ StreakImageBlock<Float, Spectrum>::put(const StreakImageBlock *block) {
     ScalarPoint2i source_offset = block->offset() - block->border_size(),
                   target_offset = offset()        - border_size();
 
-    uint32_t source_time = block->time(),
-             target_time = time();
+    uint32_t source_length = block->length(),
+             target_length = length();
 
     if constexpr (is_cuda_array_v<Float> || is_diff_array_v<Float>) {
         accumulate_3d<Float &, const Float &>(
-            block->data(), source_size, source_time,
-            data(), target_size, target_time,
+            block->data(), source_size, source_length,
+            data(), target_size, target_length,
             ScalarVector2i(0), source_offset - target_offset,
             source_size, channel_count());
     } else {
         accumulate_3d(
-            block->data().data(), source_size, source_time,
-            data().data(), target_size, target_time,
+            block->data().data(), source_size, source_length,
+            data().data(), target_size, target_length,
             ScalarVector2i(0), source_offset - target_offset,
             source_size, channel_count());
     }
@@ -243,7 +243,7 @@ StreakImageBlock<Float, Spectrum>::put(
 }
 
 MTS_VARIANT DynamicBuffer<Float> StreakImageBlock<Float, Spectrum>::data(int slice_) const {
-    uint32_t values_per_slice = m_channel_count * m_time * width();
+    uint32_t values_per_slice = m_channel_count * length() * width();
     uint32_t offset = values_per_slice * slice_;
     DynamicBuffer<ScalarUInt32> idx = arange<DynamicBuffer<ScalarUInt32>>(offset, offset + values_per_slice);
     DynamicBuffer<Float> slice_x_t = gather<DynamicBuffer<Float>>(m_data, idx);
@@ -263,6 +263,7 @@ MTS_VARIANT std::string StreakImageBlock<Float, Spectrum>::to_string() const {
         << "  warn_negative = " << m_warn_negative << "," << std::endl
         << "  warn_invalid = " << m_warn_invalid << "," << std::endl
         << "  border_size = " << m_border_size << "," << std::endl
+        << "  length = " << length() << "," << std::endl
         << "  time_border_size = " << m_time_border_size;
     if (m_filter)
         oss << "," << std::endl << "  filter = " << string::indent(m_filter);

@@ -284,7 +284,7 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
                                 <float name="radius" value="0.3"/>
                              </rfilter>""")
     exposure_time = 2
-    block_size = [10, 10]
+    block_size = [1, 1]
     sim = StreakImageBlock(
         size=block_size,
         time=5,
@@ -325,7 +325,7 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
     for i in range(border, sim.height() + border):
         for j in range(border, sim.width() + border):
             for k in range(0, sim.time()):
-                spectrum = np.array([1, 1, 0]) #np.random.uniform(size=(3,))
+                spectrum = np.random.uniform(size=(3,))
 
                 idx = k
                 ref[i, j, idx, :3] = spectrum
@@ -350,16 +350,6 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
 
     sim_t_data = np.array(sim_t.data()).reshape(sim_t_shape)
 
-    print("Applying fft to each streak image")
-    ini = time.time()
-
-    print("freqs : ", np.fft.fftfreq(sim.freq_resolution(), exposure_time))
     transformed = np.fft.fftshift(np.fft.fft(sim_t_data, axis=2, n=sim.freq_resolution()), axes=2)
-    
-    print("arr : ", sim_data)
-    print("ref : ", sim_t_data)
-    print("fft(ref) : ", transformed)
 
-    assert(abs(np.mean(sim_data - np.flip(transformed, axis=3))) < 1e-2)
-
-test08_freq_streakimageblock("scalar_rgb")
+    assert(abs(np.mean(sim_data - np.real(transformed))) < 1e-7)

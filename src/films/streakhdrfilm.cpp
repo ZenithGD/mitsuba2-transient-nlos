@@ -160,7 +160,11 @@ public:
                 m_component_format = Struct::Type::Float32;
             }
         } else if (m_file_format == Bitmap::FileFormat::HDF5) {
-            // TODO
+            if (m_component_format != Struct::Type::Float32 && m_component_format != Struct::Type::Float16 ) {
+                Log(Warn, "The HDF5 format only supports "
+                           "component_format=\"float32\" or \"float16\". Overriding to float16...");
+                m_component_format = Struct::Type::Float16;
+            }
         }
 
         props.mark_queried("banner"); // no banner in Mitsuba 2
@@ -248,7 +252,7 @@ public:
         ref<Bitmap> source = new Bitmap(
             m_channels.size() != 4 ? Bitmap::PixelFormat::MultiChannel : Bitmap::PixelFormat::XYZA,
             struct_type_v<ScalarFloat>,
-            {m_storage->size().x() * m_storage->time(), m_storage->size().y()},
+            {m_storage->size().x() * m_storage->length(), m_storage->size().y()},
             m_storage->channel_count(),
             (uint8_t *) m_storage->data().managed().data()
             );
@@ -261,7 +265,7 @@ public:
         ref<Bitmap> target = new Bitmap(
             has_aovs ? Bitmap::PixelFormat::MultiChannel : m_pixel_format,
             m_component_format,
-            {m_storage->size().x() * m_storage->time(), m_storage->size().y()},
+            {m_storage->size().x() * m_storage->length(), m_storage->size().y()},
             has_aovs ? (m_storage->channel_count() - 1) : 0);
 
         if (has_aovs) {
@@ -331,7 +335,7 @@ public:
                      : (m_channels.size() == 3 ? Bitmap::PixelFormat::XYZ
                                                : Bitmap::PixelFormat::XYZAW),
             struct_type_v<ScalarFloat>,
-            {m_storage->time(), m_storage->width()},
+            {m_storage->length(), m_storage->width()},
             m_storage->channel_count(),
             (uint8_t *) dslice.managed().data()
             // This second option should work too (similar to hdrfilm.cpp), but I do not why,
@@ -348,7 +352,7 @@ public:
         ref<Bitmap> target = new Bitmap(
             has_aovs ? Bitmap::PixelFormat::MultiChannel : m_pixel_format,
             m_component_format,
-            {m_storage->time(), m_storage->width()},
+            {m_storage->length(), m_storage->width()},
             // NOTE(diego): old code had "channel_count() - 1" here,
             // but it makes scalar_rgb_polarized not work.
             has_aovs ? m_storage->channel_count() : 0
@@ -430,6 +434,8 @@ public:
         // Remove extension if it exists
         fs::create_directory(directoryname.replace_extension());
 
+        std::cout << m_storage << std::endl;
+
         for(int i = 0; i < m_size.y(); ++i) {
             std::string filename_str = "frame_" + std::to_string(i);
             fs::path filename = fs::path(filename_str);
@@ -438,9 +444,11 @@ public:
                 filename.replace_extension(proper_extension);
 
             filename = directoryname / filename;
-            Log(Info, "\U00002714  Developing \"%s\" ..", filename.string());
+            Log(Info, "Developing \"%s\" ..", filename.string());
 
             bitmap(i, false)->write(filename, m_file_format);
+
+            Log(Info, "\U00002714 %s done.", filename.string());
         }
     }
 

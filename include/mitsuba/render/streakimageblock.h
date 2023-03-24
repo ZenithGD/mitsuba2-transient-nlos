@@ -208,7 +208,7 @@ public:
     size_t height() const { return m_size.y(); }
 
     /// Return the bitmap's length in pixels
-    size_t length() const { return m_time; }
+    size_t length() const { return m_freq_transform ? m_freq_resolution : m_time; }
 
     /// Warn when writing invalid (NaN, +/- infinity) sample values?
     void set_warn_invalid(bool value) { m_warn_invalid = value; }
