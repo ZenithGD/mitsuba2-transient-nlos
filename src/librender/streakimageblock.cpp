@@ -33,8 +33,7 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
 
     if ( m_freq_transform ) {
         for ( int i = 0; i < m_freq_resolution; i++ ) {
-            m_freqs[i] = m_lo_fbound + (m_hi_fbound - m_lo_fbound) * (float)i / (float)(m_freq_resolution); 
-            std::cout << i << "; " << m_freqs[i] << std::endl;
+            m_freqs[i] = m_lo_fbound + (m_hi_fbound - m_lo_fbound) * (float)i / (float)(m_freq_resolution);
         }
     }
     // TODO(jorge): initialize also the time_filter
@@ -68,8 +67,6 @@ StreakImageBlock<Float, Spectrum>::set_size(const ScalarVector2i &size,
         
     m_data = empty<DynamicBuffer<Float>>(m_channel_count * depth *
                                          hprod(size + 2 * m_border_size));
-
-    std::cout << "set_size ok " << std::endl;
 }
 MTS_VARIANT void
 StreakImageBlock<Float, Spectrum>::put(const StreakImageBlock *block) {
@@ -237,8 +234,6 @@ StreakImageBlock<Float, Spectrum>::put(
                         scatter_add(m_data, real(ft), freq_offset + k, enabled);
                     }
                 } else {
-                    std::cout << "offset : " << offset + pos_sensor_int * m_channel_count + k << ", "
-                              << "time_offset : " << time_offset + k << std::endl;
                 
                     scatter_add(m_data, radiance_sample.values[k], time_offset + k, enabled);
                 }

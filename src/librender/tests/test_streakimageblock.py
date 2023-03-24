@@ -284,12 +284,13 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
                                 <float name="radius" value="0.3"/>
                              </rfilter>""")
     exposure_time = 2
+    block_size = [10, 10]
     sim = StreakImageBlock(
-        size=[2, 2],
+        size=block_size,
         time=5,
-        freq_resolution=4,
-        lo_fbound=-0.25,
-        hi_fbound=0.25,
+        freq_resolution=5,
+        lo_fbound=-0.2,
+        hi_fbound=0.3,
         exposure_time=exposure_time,
         time_offset=0,
         channel_count=3,
@@ -299,7 +300,7 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
     sim.clear()
 
     sim_t = StreakImageBlock(
-        size=[2, 2],
+        size=block_size,
         time=5,
         freq_resolution=3,
         lo_fbound=-2,
@@ -358,5 +359,7 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
     print("arr : ", sim_data)
     print("ref : ", sim_t_data)
     print("fft(ref) : ", transformed)
+
+    assert(abs(np.mean(sim_data - np.flip(transformed, axis=3))) < 1e-2)
 
 test08_freq_streakimageblock("scalar_rgb")
