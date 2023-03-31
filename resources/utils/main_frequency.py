@@ -91,7 +91,7 @@ def write_video_custom(streakimg_ldr: np.array, filename: str):
     # 2. Iterate over the streak img frames
     with tqdm(total=number_of_frames, ascii=True) as pbar:
         for i in range(number_of_frames):
-            writer.append_data((cm.hot(streakimg_ldr[:, :, i]) * 255).astype(np.uint8))
+            writer.append_data((cm.seismic(streakimg_ldr[:, :, i]) * 255).astype(np.uint8))
             pbar.update(1)
     # 3. Write the video
     writer.close()
@@ -128,13 +128,6 @@ def validate(streakimg):
     elapsed = time.time() - ini
     print(f"took {elapsed} secs.")
 
-    
-    plt.imshow(np.real(transformed[:, 60, :]), cmap='hot')
-    plt.savefig("real.png")
-
-    plt.imshow(np.imag(transformed[:, 60, :]), cmap='hot')
-    plt.savefig("imag.png")
-
     # 8. Write video of streak image
     if "v" in args.result:
         name_video_file = args.dir + "/streak_video"
@@ -151,6 +144,10 @@ def validate(streakimg):
         write_frames(np.imag(transformed), folder=name_folder + "_imag")
 
 def visualize(streakimg):
+
+    print("min : ", np.amin(streakimg))
+    print("max : ", np.amax(streakimg))
+
     if "v" in args.result:
         name_video_file = args.dir + "/streak_video"
         print(f"Writing streak image video to {name_video_file}")

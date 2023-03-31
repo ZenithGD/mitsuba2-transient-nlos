@@ -33,7 +33,7 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
 
     if ( m_freq_transform ) {
         for ( int i = 0; i < m_freq_resolution; i++ ) {
-            m_freqs[i] = m_lo_fbound + (m_hi_fbound - m_lo_fbound) * (float)i / (float)(m_freq_resolution);
+            m_freqs[i] = m_lo_fbound + (m_hi_fbound - m_lo_fbound) * (float)i / (float)(m_freq_resolution - 1);
         }
     }
     // TODO(jorge): initialize also the time_filter
