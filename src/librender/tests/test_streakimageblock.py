@@ -275,7 +275,7 @@ def test07_data_slice(variant_scalar_rgb):
 
 # TODO: missing test with Packet and Spectral
 
-def test08_freq_streakimageblock(variant_scalar_rgb):
+def test08_freq_streakimageblock_one_sample(variant_scalar_rgb):
     from mitsuba.core import srgb_to_xyz
     from mitsuba.core.xml import load_string
     from mitsuba.render import StreakImageBlock
@@ -285,9 +285,9 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
                                 <float name="radius" value="0.1"/>
                              </rfilter>""")
 
-    exposure_time = 1
-    time = 6
-    freq_resolution = 6
+    exposure_time = 5
+    time = 4
+    freq_resolution = 3
     block_size = [2, 2]
     freqs = np.fft.fftfreq(n=freq_resolution)
 
@@ -302,7 +302,8 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
         time_offset=0,
         channel_count=3,
         freq_transform=True,
-        filter=rfilter
+        filter=rfilter,
+        border=False
     )
     sim.clear()
 
@@ -317,7 +318,8 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
         time_offset=0,
         channel_count=3,
         freq_transform=False,
-        filter=rfilter
+        filter=rfilter,
+        border=False
     )
     sim_t.clear()
 
@@ -325,17 +327,13 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
     rng = Generator(PCG64())
 
     # add random samples
-    for i in range(border, sim.height() + border):
-        for j in range(border, sim.width() + border):
-            for k in range(0, sim.time()):
-                spectrum1 = rng.uniform(size=(3,))
-                spectrum2 = rng.uniform(size=(3,))
+    spectrum1 = [1, 0.5, 1]
 
-                idx = k
-
-                # add sample on the center of the pixel so the filter isn't applied.
-                sim.put([j + 0.5, i + 0.5], [(k * exposure_time, spectrum1, True)])
-                sim_t.put([j + 0.5, i + 0.5], [(k * exposure_time, spectrum1, True)])
+    i, j = 0, 0
+    t = 2
+    # add sample on the center of the pixel so the filter isn't applied.
+    sim.put([j + 0.5, i + 0.5], [(t * exposure_time, spectrum1, True)])
+    sim_t.put([j + 0.5, i + 0.5], [(t * exposure_time, spectrum1, True)])
 
     sim_shape = (sim.height() + 2 * border,
                 sim.width() + 2 * border,
@@ -359,8 +357,102 @@ def test08_freq_streakimageblock(variant_scalar_rgb):
 
     print("fft: ", np.real(transformed))
 
+    print("original: ", sim_t_data)
+
+    assert(np.allclose(sim_data, np.real(transformed)))
+
+
+def test09_freq_streakimageblock_full(variant_scalar_rgb):
+    from mitsuba.core import srgb_to_xyz
+    from mitsuba.core.xml import load_string
+    from mitsuba.render import StreakImageBlock
+
+    # Recall that we must pass a reconstruction filter to use the `put` methods.
+    rfilter = load_string("""<rfilter version="2.0.0" type="box">
+                                <float name="radius" value="0.1"/>
+                             </rfilter>""")
+
+    exposure_time = 4
+    time = 5
+    freq_resolution = 5
+    block_size = [3, 3]
+    freqs = np.fft.fftfreq(n=freq_resolution)
+
+    # frequency resolved block
+    sim = StreakImageBlock(
+        size=block_size,
+        time=time,
+        freq_resolution=freq_resolution,
+        lo_fbound=freqs.min(),
+        hi_fbound=freqs.max(),
+        exposure_time=exposure_time,
+        time_offset=0,
+        channel_count=3,
+        freq_transform=True,
+        filter=rfilter,
+        border=False
+    )
+    sim.clear()
+
+    # time-resolved block
+    sim_t = StreakImageBlock(
+        size=block_size,
+        time=time,
+        freq_resolution=freq_resolution,
+        lo_fbound=freqs.min(),
+        hi_fbound=freqs.max(),
+        exposure_time=exposure_time,
+        time_offset=0,
+        channel_count=3,
+        freq_transform=False,
+        filter=rfilter,
+        border=False
+    )
+    sim_t.clear()
+
+    border = sim.border_size()
+    rng = Generator(PCG64())
+
+    # add random samples
+    for i in range(border, sim.height() + border):
+        for j in range(border, sim.width() + border):
+            for k in range(0, sim.time()):
+                spectrum1 = rng.uniform(size=(3,))
+                spectrum2 = rng.uniform(size=(3,))
+
+                #spectrum1 = [1, 0.5, 1]
+
+                idx = k
+
+                # add sample on the center of the pixel so the filter isn't applied.
+                sim.put([j + 0.5, i + 0.5], [(k * exposure_time, spectrum1, True)])
+                sim_t.put([j + 0.5, i + 0.5], [(k * exposure_time, spectrum1, True)])
+
+    sim_shape = (sim.height() + 2 * border,
+        sim.width() + 2 * border,
+        sim.freq_resolution(),
+        3)
+
+    sim_data = np.array(sim.data()).reshape(sim_shape)
+
+    sim_t_shape = (sim_t.height() + 2 * border,
+        sim_t.width() + 2 * border,
+        sim_t.time(),
+        3)
+
+    sim_t_data = np.array(sim_t.data()).reshape(sim_t_shape)
+
+    transformed = np.fft.fftshift(np.fft.fft(sim_t_data, axis=2, n=sim.freq_resolution()), axes=2)
+
+    print(f"Freqs: {freqs}")
+
+    print("transf:", sim_data)
+
+    print("fft: ", np.real(transformed))
+
+    print("original: ", sim_t_data)
+
     # mean error of the transformation
     mean_err = abs(np.mean(sim_data - np.real(transformed)))
     
-    print(f"mean error: {mean_err}")
-    assert(mean_err < 1e-6)
+    assert(np.allclose(sim_data, np.real(transformed), atol=5e-7))
