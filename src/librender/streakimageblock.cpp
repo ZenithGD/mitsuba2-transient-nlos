@@ -118,7 +118,10 @@ StreakImageBlock<Float, Spectrum>::put(
     // TODO(jorge): assert m_time_filter != nullptr and use it later
 
     for (const auto &radiance_sample : values) {
+
+        std::cout << radiance_sample.opl << std::endl;
         Mask active = radiance_sample.mask;
+        std::cout << "mask : " << active << std::endl;
         // Convert t to bin
         Float pos_sensor      = (radiance_sample.opl - m_time_offset) / m_exposure_time;
         Int32 pos_sensor_int = floor2int<Int32>(pos_sensor);
@@ -200,17 +203,26 @@ StreakImageBlock<Float, Spectrum>::put(
                     UInt32 x      = lo.x() + xr;
                     UInt32 offset = m_channel_count * (y * size.x() * m_time +
                                                     x * m_time + pos_sensor_int);
+
+                    UInt32 time_offset = m_channel_count * (lo.y() * size.x() * m_time +
+                                            lo.x() * m_time + pos_sensor_int);
+
                     Float weight  = m_weights_y[yr] * m_weights_x[xr];
 
                     enabled &= x <= hi.x();
                     ENOKI_NOUNROLL for (uint32_t k = 0; k < m_channel_count; ++k)
 
                         if ( m_freq_transform ) {
-                            //hardcoded at the moment
-                            Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl, 1.0);
-                            scatter_add(m_data, real(ft), offset + k, enabled);
+
+                            for ( int f = 0; f < m_freq_resolution; f++ ) {
+
+                                UInt32 freq_offset = offset + m_channel_count * f;
+                                Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl / m_exposure_time, m_freqs[f]);
+                                scatter_add(m_data, real(ft), freq_offset + k, enabled);
+                            }
                         } else {
-                            scatter_add(m_data, radiance_sample.values[k], offset + k, enabled);
+                        
+                            scatter_add(m_data, radiance_sample.values[k] * weight, time_offset + k, enabled);
                         }
                 }
             }
@@ -230,7 +242,7 @@ StreakImageBlock<Float, Spectrum>::put(
                     for ( int f = 0; f < m_freq_resolution; f++ ) {
 
                         UInt32 freq_offset = offset + m_channel_count * f;
-                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], radiance_sample.opl, m_freqs[f]);
+                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], radiance_sample.opl / m_exposure_time, m_freqs[f]);
                         scatter_add(m_data, real(ft), freq_offset + k, enabled);
                     }
                 } else {
