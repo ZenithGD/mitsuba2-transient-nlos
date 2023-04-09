@@ -113,8 +113,6 @@ def write_video_custom(streakimg_ldr: np.array, filename: str):
     number_of_frames = streakimg_ldr.shape[2]
 
     st = cm.seismic(streakimg_ldr)
-
-    print(st.max(), st.min())
     
     # 1. Get the streak image (already done) and define the output
     writer = imageio.get_writer(filename + ".mp4", fps=10)
@@ -167,8 +165,6 @@ def validate(streakimg):
         print(f"Writing streak image video to {name_video_file}")
 
         write_video_custom(np.real(transformed), filename=name_video_file + "_real")
-        write_video_custom(np.imag(transformed), filename=name_video_file + "_imag")
-        write_video_custom(np.angle(transformed), filename=name_video_file + "_phase")
 
     if "f" in args.result:
         name_folder = args.dir + "/freq_streak"
@@ -209,7 +205,7 @@ def main(args):
         visualize(streakimg)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tool for Frequency Streak Image validation")
+    parser = argparse.ArgumentParser(description="Tool for Frequency Streak Image visualization and validation")
     # Options for reading steady and streak image
     parser.add_argument('-d', '--dir', type=str, help="Directory where the streak images are stored",
                         default="cbox")

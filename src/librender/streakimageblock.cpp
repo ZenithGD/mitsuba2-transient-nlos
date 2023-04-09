@@ -106,9 +106,10 @@ StreakImageBlock<Float, Spectrum>::put(const StreakImageBlock *block) {
 // compute one term of the sum approximation of the integral Fourier Transform.
 template <typename Float>
 Complex<Float> ft_partial_term(Float value, Float t, Float freq) {
+    
     Complex<Float> I(0.0f, 1.0f); 
-    Float coef = -2.0f;
-    return value * exp(coef * (Float)M_PI * I * freq * t);
+    //std::cout << value << " * cmath.exp(-2j * cmath.pi * " << freq << "*" << t << ")" << std::endl;
+    return exp(I * -2.0f * (Float)M_PI * freq * t) * value;
 }
 
 MTS_VARIANT void
@@ -118,7 +119,7 @@ StreakImageBlock<Float, Spectrum>::put(
     Assert(m_filter != nullptr);
     // TODO(jorge): assert m_time_filter != nullptr and use it later
 
-    Float npix = m_size.x() * m_size.y();
+    // Float npix = m_size.x() * m_size.y();
 
     for (const auto &radiance_sample : values) {
 
@@ -218,7 +219,7 @@ StreakImageBlock<Float, Spectrum>::put(
                             for ( int f = 0; f < m_freq_resolution; f++ ) {
 
                                 UInt32 freq_offset = offset + m_channel_count * f;
-                                Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl, m_freqs[f]) / npix;
+                                Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl, m_freqs[f]);
                                 scatter_add(m_data, real(ft), freq_offset + k, enabled);
                             }
                         } else {
@@ -243,7 +244,9 @@ StreakImageBlock<Float, Spectrum>::put(
                     for ( int f = 0; f < m_freq_resolution; f++ ) {
 
                         UInt32 freq_offset = offset + m_channel_count * f;
-                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], radiance_sample.opl, m_freqs[f]) / npix;
+
+                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], radiance_sample.opl, m_freqs[f]);
+
                         scatter_add(m_data, real(ft), freq_offset + k, enabled);
                     }
                 } else {

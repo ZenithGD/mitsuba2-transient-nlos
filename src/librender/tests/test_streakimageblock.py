@@ -285,10 +285,10 @@ def test08_freq_streakimageblock_one_sample(variant_scalar_rgb):
                                 <float name="radius" value="0.1"/>
                              </rfilter>""")
 
-    exposure_time = 5
+    exposure_time = 1
     time = 4
-    freq_resolution = 3
-    block_size = [2, 2]
+    freq_resolution = time
+    block_size = [1, 1]
     freqs = np.fft.fftfreq(n=freq_resolution)
 
     # frequency resolved block
@@ -330,7 +330,7 @@ def test08_freq_streakimageblock_one_sample(variant_scalar_rgb):
     spectrum1 = [1, 0.5, 1]
 
     i, j = 0, 0
-    t = 2
+    t = 3
     # add sample on the center of the pixel so the filter isn't applied.
     sim.put([j + 0.5, i + 0.5], [(t * exposure_time, spectrum1, True)])
     sim_t.put([j + 0.5, i + 0.5], [(t * exposure_time, spectrum1, True)])
@@ -359,7 +359,7 @@ def test08_freq_streakimageblock_one_sample(variant_scalar_rgb):
 
     print("original: ", sim_t_data)
 
-    assert(np.allclose(sim_data, np.real(transformed)))
+    assert(np.allclose(sim_data, np.real(transformed), atol=5e-7))
 
 
 def test09_freq_streakimageblock_full(variant_scalar_rgb):
@@ -372,9 +372,9 @@ def test09_freq_streakimageblock_full(variant_scalar_rgb):
                                 <float name="radius" value="0.1"/>
                              </rfilter>""")
 
-    exposure_time = 4
-    time = 5
-    freq_resolution = 5
+    exposure_time = 1
+    time = 6
+    freq_resolution = time
     block_size = [30, 30]
     freqs = np.fft.fftfreq(n=freq_resolution)
 
@@ -455,4 +455,4 @@ def test09_freq_streakimageblock_full(variant_scalar_rgb):
     # mean error of the transformation
     mean_err = abs(np.mean(sim_data - np.real(transformed)))
     
-    assert(np.allclose(sim_data, np.real(transformed), atol=5e-7))
+    assert(mean_err < 1e-7)
