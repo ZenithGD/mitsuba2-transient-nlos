@@ -8,6 +8,8 @@ from matplotlib import cm
 
 def main(args):
     f = h5py.File(args.infile, 'r')
+
+    print(f['hdf5'].shape)
     data = np.nan_to_num(f['hdf5'][:, :, :3]) # drop alpha
 
     print("max :", np.amax(data))

@@ -248,14 +248,16 @@ def test_accumulate():
 def test_hdf5_format():
     np.random.seed(12345)
 
-    b = Bitmap(Bitmap.PixelFormat.RGB, Struct.Type.Float16, [10, 20])
-    ref = np.float16(np.array([ [ [i / 2, j / 2, i / 2+j / 2] for j in range(10) ] for i in range(20)]))
+    size = [30, 40]
+
+    b = Bitmap(Bitmap.PixelFormat.RGB, Struct.Type.Float32, size)
+    ref = np.float16(np.array([ [ [i / 2, j / 2, i / 2+j / 2] for j in range(size[0]) ] for i in range(size[1])]))
     np.array(b, copy=False)[:] = ref[...]
     tmp_file = "out.hdf5"
     b.write(tmp_file)
     b2 = Bitmap(tmp_file)
     print(b2)
-    assert np.abs(np.mean(np.array(b2)-ref)) < 1e-2
+    assert np.allclose(np.array(b2), ref)
     #os.remove(tmp_file)
 
 test_hdf5_format()

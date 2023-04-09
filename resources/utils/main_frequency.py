@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from matplotlib import cm
+from matplotlib import colors
 
 import imageio
 import time
@@ -13,6 +14,8 @@ import mitsuba
 
 from tonemapper import *
 from tqdm import tqdm
+
+import h5py
 
 mitsuba.set_variant("scalar_rgb")
 
@@ -29,6 +32,28 @@ def read_streakimg(dir: str, extension: str = "exr") -> np.array:
     for i_xtframe in range(number_of_xtframes):
         img = imageio.imread(f"{dir}/frame_{i_xtframe}.{extension}")
         fileList.append(np.expand_dims(img, axis=0))
+
+    streak_img = np.concatenate(fileList)
+    return np.nan_to_num(streak_img, nan=0.)
+
+def read_streakimg_hdf5(dir: str) -> np.array:
+    """
+    Reads all the images x-t that compose the streak image. It assumes that the format is HDF5.
+
+    :param dir: path where the images x-t are stored
+    :param extension: of the images x-t
+    :return: a streak image of shape [height, width, time, nchannels]
+    """
+    number_of_xtframes = len(glob.glob(f"{dir}/frame_*.hdf5"))
+    fileList = []
+    with tqdm(total=number_of_xtframes, ascii=True) as pbar:
+        for i_xtframe in range(number_of_xtframes):
+            
+            f = h5py.File(f"{dir}/frame_{i_xtframe}.hdf5", 'r')
+
+            data = np.nan_to_num(f['hdf5'][:, :, :3]) # drop alpha
+            fileList.append(np.expand_dims(data, axis=0))
+            pbar.update(1)
 
     streak_img = np.concatenate(fileList)
     return np.nan_to_num(streak_img, nan=0.)
@@ -86,12 +111,17 @@ def write_video_custom(streakimg_ldr: np.array, filename: str):
     :param tonemap:
     """
     number_of_frames = streakimg_ldr.shape[2]
+
+    st = cm.seismic(streakimg_ldr)
+
+    print(st.max(), st.min())
+    
     # 1. Get the streak image (already done) and define the output
     writer = imageio.get_writer(filename + ".mp4", fps=10)
     # 2. Iterate over the streak img frames
     with tqdm(total=number_of_frames, ascii=True) as pbar:
         for i in range(number_of_frames):
-            writer.append_data((cm.seismic(streakimg_ldr[:, :, i]) * 255).astype(np.uint8))
+            writer.append_data((st[:, :, i] * 255.0).astype(np.uint8))
             pbar.update(1)
     # 3. Write the video
     writer.close()
@@ -117,14 +147,17 @@ def validate(streakimg):
     print("Applying fft to each streak image")
     ini = time.time()
     
-    transformed = np.empty(streakimg.shape, dtype=np.complex128)
+    transformed = np.empty(streakimg.shape, dtype=np.complex64)
 
     # loop through all streak images
     for i in range(streakimg.shape[1]):
         streak = streakimg[:, i, :]
 
         transformed[:, i, :] = np.fft.fftshift(np.fft.fft(streak, axis=1), axes=1)
-
+    
+    print("min : ", np.amin(transformed))
+    print("max : ", np.amax(transformed))
+    
     elapsed = time.time() - ini
     print(f"took {elapsed} secs.")
 
@@ -163,9 +196,12 @@ def main(args):
 
     # Load streak image
     print("Loading streak image")
-    streakimg = read_streakimg_mitsuba(args.dir, extension=args.extension)
+    if args.extension != "hdf5":
+        streakimg = read_streakimg_mitsuba(args.dir, extension=args.extension)
+    else:
+        streakimg = read_streakimg_hdf5(args.dir)
 
-    streakimg = streakimg[:, :, :, 0].astype(np.float32)  # only red
+    streakimg = streakimg[:, :, :, 0]  # only red
 
     if args.validate:
         validate(streakimg)

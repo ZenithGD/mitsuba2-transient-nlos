@@ -2497,11 +2497,14 @@ void Bitmap::read_hdf5(const std::string& path) {
     std::string type;
     type_attr.read(type);
 
+    std::cout << type << std::endl;
     // find size
     auto dims = dataset.getDimensions();
     if ( dims.size() != 3 ) {
         Throw("Wrong dimension number! Expected 3, found %d", dims.size());
     }
+
+    std::cout << dims[0] << ", " << dims[1] << ", " << dims[2] << std::endl;
 
     m_size = Vector2u((uint32_t) dims[1], (uint32_t) dims[0]);
 

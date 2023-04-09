@@ -375,7 +375,7 @@ def test09_freq_streakimageblock_full(variant_scalar_rgb):
     exposure_time = 4
     time = 5
     freq_resolution = 5
-    block_size = [3, 3]
+    block_size = [30, 30]
     freqs = np.fft.fftfreq(n=freq_resolution)
 
     # frequency resolved block

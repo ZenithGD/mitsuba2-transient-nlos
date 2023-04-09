@@ -107,7 +107,8 @@ StreakImageBlock<Float, Spectrum>::put(const StreakImageBlock *block) {
 template <typename Float>
 Complex<Float> ft_partial_term(Float value, Float t, Float freq) {
     Complex<Float> I(0.0f, 1.0f); 
-    return value * exp(-2.0f * M_PI * I * freq * t);
+    Float coef = -2.0f;
+    return value * exp(coef * (Float)M_PI * I * freq * t);
 }
 
 MTS_VARIANT void
@@ -117,11 +118,11 @@ StreakImageBlock<Float, Spectrum>::put(
     Assert(m_filter != nullptr);
     // TODO(jorge): assert m_time_filter != nullptr and use it later
 
+    Float npix = m_size.x() * m_size.y();
+
     for (const auto &radiance_sample : values) {
 
-        std::cout << radiance_sample.opl << std::endl;
         Mask active = radiance_sample.mask;
-        std::cout << "mask : " << active << std::endl;
         // Convert t to bin
         Float pos_sensor      = (radiance_sample.opl - m_time_offset) / m_exposure_time;
         Int32 pos_sensor_int = floor2int<Int32>(pos_sensor);
@@ -217,7 +218,7 @@ StreakImageBlock<Float, Spectrum>::put(
                             for ( int f = 0; f < m_freq_resolution; f++ ) {
 
                                 UInt32 freq_offset = offset + m_channel_count * f;
-                                Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl / m_exposure_time, m_freqs[f]);
+                                Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl, m_freqs[f]) / npix;
                                 scatter_add(m_data, real(ft), freq_offset + k, enabled);
                             }
                         } else {
@@ -242,7 +243,7 @@ StreakImageBlock<Float, Spectrum>::put(
                     for ( int f = 0; f < m_freq_resolution; f++ ) {
 
                         UInt32 freq_offset = offset + m_channel_count * f;
-                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], radiance_sample.opl / m_exposure_time, m_freqs[f]);
+                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], radiance_sample.opl, m_freqs[f]) / npix;
                         scatter_add(m_data, real(ft), freq_offset + k, enabled);
                     }
                 } else {
