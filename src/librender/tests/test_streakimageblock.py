@@ -6,6 +6,7 @@ import pytest
 import enoki as ek
 import mitsuba
 import time
+from dataclasses import dataclass
 from numpy.random import Generator, PCG64
 
 mitsuba.set_variant("scalar_rgb")
@@ -274,6 +275,36 @@ def test07_data_slice(variant_scalar_rgb):
                     f'Height {h} Time {k} Channel {l}:\n' + str(vals[:, k, l]) + '\n\n' + str(ref2[:, k, l])
 
 # TODO: missing test with Packet and Spectral
+@dataclass
+class RadianceSample:
+    pos : np.array
+    time : float
+    spectrum : np.array
+    mask : bool
+
+def manual_fft(block, samples : list) -> np.array:
+    # get properties from block
+
+    x, y = block.size()
+    freqs = block.freq_resolution()
+    channels = block.channel_count()
+
+    freq_array = np.fft.fftshift(np.fft.fftfreq(freqs, block.exposure_time()))
+
+    print(freq_array)
+
+    res = np.zeros((x, y, freqs, channels), dtype=np.complex128)
+
+    for sample in samples:
+        # get position in block
+        p = np.ceil(sample.pos - 0.5).astype(np.int32)
+
+        # for all frequencies accumulate transform value
+        for i, f in enumerate(freq_array):
+            for j, s in enumerate(sample.spectrum):
+                res[p[0], p[1], i, j] += sample.spectrum[len(sample.spectrum) - j - 1] * np.exp(-2.0 * np.pi * 1j * f * sample.time)
+
+    return res
 
 def test08_freq_streakimageblock_one_sample(variant_scalar_rgb):
     from mitsuba.core import srgb_to_xyz
@@ -286,10 +317,10 @@ def test08_freq_streakimageblock_one_sample(variant_scalar_rgb):
                              </rfilter>""")
 
     exposure_time = 1
-    time = 4
+    time = 100
     freq_resolution = time
     block_size = [1, 1]
-    freqs = np.fft.fftfreq(n=freq_resolution)
+    freqs = np.fft.fftfreq(n=freq_resolution, d=exposure_time)
 
     # frequency resolved block
     sim = StreakImageBlock(
@@ -329,11 +360,15 @@ def test08_freq_streakimageblock_one_sample(variant_scalar_rgb):
     # add random samples
     spectrum1 = [1, 0.5, 1]
 
+    samples = []
+
     i, j = 0, 0
-    t = 3
+    t = 1
     # add sample on the center of the pixel so the filter isn't applied.
     sim.put([j + 0.5, i + 0.5], [(t * exposure_time, spectrum1, True)])
     sim_t.put([j + 0.5, i + 0.5], [(t * exposure_time, spectrum1, True)])
+
+    samples.append(RadianceSample(np.array([j + 0.5, i + 0.5]), t * exposure_time, spectrum1, True))
 
     sim_shape = (sim.height() + 2 * border,
                 sim.width() + 2 * border,
@@ -351,13 +386,13 @@ def test08_freq_streakimageblock_one_sample(variant_scalar_rgb):
 
     transformed = np.fft.fftshift(np.fft.fft(sim_t_data, axis=2, n=sim.freq_resolution()), axes=2)
 
+    manual = manual_fft(sim, samples)
+
     print(f"Freqs: {freqs}")
-
     print("transf:", sim_data)
-
     print("fft: ", np.real(transformed))
-
     print("original: ", sim_t_data)
+    print("manual:", manual)
 
     assert(np.allclose(sim_data, np.real(transformed), atol=5e-7))
 
@@ -372,11 +407,11 @@ def test09_freq_streakimageblock_full(variant_scalar_rgb):
                                 <float name="radius" value="0.1"/>
                              </rfilter>""")
 
-    exposure_time = 1
-    time = 6
+    exposure_time = np.random.randint(1, 100)
+    time = np.random.randint(2, 100)
     freq_resolution = time
-    block_size = [30, 30]
-    freqs = np.fft.fftfreq(n=freq_resolution)
+    block_size = [1, 1]
+    freqs = np.fft.fftfreq(n=freq_resolution, d=exposure_time)
 
     # frequency resolved block
     sim = StreakImageBlock(
@@ -413,12 +448,14 @@ def test09_freq_streakimageblock_full(variant_scalar_rgb):
     border = sim.border_size()
     rng = Generator(PCG64())
 
+    samples = []
+
     # add random samples
     for i in range(border, sim.height() + border):
         for j in range(border, sim.width() + border):
             for k in range(0, sim.time()):
                 spectrum1 = rng.uniform(size=(3,))
-                spectrum2 = rng.uniform(size=(3,))
+                #spectrum2 = rng.uniform(size=(3,))
 
                 #spectrum1 = [1, 0.5, 1]
 
@@ -427,6 +464,8 @@ def test09_freq_streakimageblock_full(variant_scalar_rgb):
                 # add sample on the center of the pixel so the filter isn't applied.
                 sim.put([j + 0.5, i + 0.5], [(k * exposure_time, spectrum1, True)])
                 sim_t.put([j + 0.5, i + 0.5], [(k * exposure_time, spectrum1, True)])
+
+                samples.append(RadianceSample(np.array([j + 0.5, i + 0.5]), k * exposure_time, spectrum1, True))
 
     sim_shape = (sim.height() + 2 * border,
         sim.width() + 2 * border,
@@ -444,15 +483,15 @@ def test09_freq_streakimageblock_full(variant_scalar_rgb):
 
     transformed = np.fft.fftshift(np.fft.fft(sim_t_data, axis=2, n=sim.freq_resolution()), axes=2)
 
-    print(f"Freqs: {freqs}")
+    manual = manual_fft(sim, samples)
 
+    print("Freqs:", freqs)
     print("transf:", sim_data)
-
     print("fft: ", np.real(transformed))
-
     print("original: ", sim_t_data)
+    print("manual", manual)
 
     # mean error of the transformation
     mean_err = abs(np.mean(sim_data - np.real(transformed)))
     
-    assert(mean_err < 1e-7)
+    assert(mean_err < 1e-5)

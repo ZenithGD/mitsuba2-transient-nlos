@@ -108,8 +108,8 @@ template <typename Float>
 Complex<Float> ft_partial_term(Float value, Float t, Float freq) {
     
     Complex<Float> I(0.0f, 1.0f); 
-    //std::cout << value << " * cmath.exp(-2j * cmath.pi * " << freq << "*" << t << ")" << std::endl;
-    return exp(I * -2.0f * (Float)M_PI * freq * t) * value;
+    //std::cout << value << " * exp(-2.0 pi i * " << freq << "*" << t << ")" << std::endl;
+    return exp(I * -2.0f * 3.141592f * freq * t) * value;
 }
 
 MTS_VARIANT void
@@ -246,7 +246,6 @@ StreakImageBlock<Float, Spectrum>::put(
                         UInt32 freq_offset = offset + m_channel_count * f;
 
                         Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], radiance_sample.opl, m_freqs[f]);
-
                         scatter_add(m_data, real(ft), freq_offset + k, enabled);
                     }
                 } else {
