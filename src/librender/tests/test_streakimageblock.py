@@ -297,7 +297,10 @@ def manual_fft(block, samples : list) -> np.array:
 
     for sample in samples:
         # get position in block
-        p = np.ceil(sample.pos - 0.5).astype(np.int32)
+        p = np.floor(sample.pos).astype(np.int32)
+
+        if ( p[0] >= x or p[1] >= y ):
+            continue
 
         # for all frequencies accumulate transform value
         for i, f in enumerate(freq_array):
@@ -462,10 +465,10 @@ def test09_freq_streakimageblock_full(variant_scalar_rgb):
                 idx = k
 
                 # add sample on the center of the pixel so the filter isn't applied.
-                sim.put([j + 0.5, i + 0.5], [(k * exposure_time, spectrum1, True)])
-                sim_t.put([j + 0.5, i + 0.5], [(k * exposure_time, spectrum1, True)])
+                sim.put([j + 0.6, i + 0.6], [(k * exposure_time, spectrum1, True)])
+                sim_t.put([j + 0.6, i + 0.6], [(k * exposure_time, spectrum1, True)])
 
-                samples.append(RadianceSample(np.array([j + 0.5, i + 0.5]), k * exposure_time, spectrum1, True))
+                samples.append(RadianceSample(np.array([j + 0.6, i + 0.6]), k * exposure_time, spectrum1, True))
 
     sim_shape = (sim.height() + 2 * border,
         sim.width() + 2 * border,

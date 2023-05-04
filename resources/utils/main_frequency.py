@@ -203,6 +203,8 @@ def main(args):
         validate(streakimg)
     elif args.visualize:
         visualize(streakimg)
+    elif args.compare:
+        compare(streakimg)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tool for Frequency Streak Image visualization and validation")
@@ -212,7 +214,8 @@ if __name__ == "__main__":
 
     task_group = parser.add_mutually_exclusive_group()
     task_group.add_argument("--validate", action="store_true", help="Show validation video with full frequency spectrum")
-    task_group.add_argument("--visualize", action="store_true", help="Visualize results on ")
+    task_group.add_argument("--visualize", action="store_true", help="Visualize results on video")
+    task_group.add_argument("--compare", action="store_true", help="Compare validation and result")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-r', "--red", action="store_true", help="Show red channel only")

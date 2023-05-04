@@ -1,0 +1,108 @@
+<scene version="2.0.0">
+    <default name="spp" value="32"/>
+    <default name="res" value="256"/>
+    <default name="max_depth" value="4"/>
+    <default name="ft" value="true" />
+    <default name="lb" value="-0.0625" />
+    <default name="hb" value="0.0625" />
+    <default name="time" value="380" />
+    <default name="fres" value="380" />
+
+    <!-- <integrator type="direct"/> -->
+    <integrator type="transientpath">
+        <integer name="max_depth" value="$max_depth"/>
+    </integrator>
+
+    <bsdf type="diffuse" id="box">
+        <rgb name="reflectance" value="0.45, 0.30, 0.90"/>
+    </bsdf>
+
+    <bsdf type="diffuse" id="white">
+        <rgb name="reflectance" value="0.885809, 0.698859, 0.666422"/>
+    </bsdf>
+
+    <bsdf type="diffuse" id="red">
+        <rgb name="reflectance" value="0.570068, 0.0430135, 0.0443706"/>
+    </bsdf>
+
+    <bsdf type="diffuse" id="green">
+        <rgb name="reflectance" value="0.105421, 0.37798, 0.076425"/>
+    </bsdf>
+
+    <bsdf type="diffuse" id="light">
+        <rgb name="reflectance" value="0.936461, 0.740433, 0.705267"/>
+    </bsdf>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_luminaire.obj"/>
+        <transform name="to_world">
+            <translate x="0" y="-0.5" z="0"/>
+        </transform>
+        <ref id="light"/>
+        <ref id="area-emitter"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_floor.obj"/>
+        <ref id="white"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_ceiling.obj"/>
+        <ref id="white"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_back.obj"/>
+        <ref id="white"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_greenwall.obj"/>
+        <ref id="green"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_redwall.obj"/>
+        <ref id="red"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_smallbox.obj"/>
+        <ref id="box"/>
+    </shape>
+    <shape type="obj">
+        <string name="filename" value="meshes/cbox_largebox.obj"/>
+        <ref id="box"/>
+    </shape>
+
+    <emitter type="area" id="area-emitter">
+        <rgb name="radiance" value="18.387, 10.9873, 2.75357"/>
+    </emitter>
+
+    <sensor type="perspective">
+        <string name="fov_axis" value="smaller"/>
+        <float name="near_clip" value="10"/>
+        <float name="far_clip" value="2800"/>
+        <float name="focus_distance" value="1000"/>
+        <float name="fov" value="39.3077"/>
+        <transform name="to_world">
+            <lookat origin="278, 273, -800"
+                    target="278, 273, -799"
+                    up    ="  0,   1,    0"/>
+        </transform>
+        <sampler type="independent">  <!-- ldsampler -->
+            <integer name="sample_count" value="$spp"/>
+        </sampler>
+        <film type="streakhdrfilm" name="streakfilm">
+            <string name="component_format" value="float32" />
+            <string name="file_format" value="hdf5" />
+            <integer name="width" value="$res"/>
+            <integer name="height" value="$res"/>
+            <integer name="time" value="$time"/>
+            <float name="exposure_time" value="8"/>
+            <float name="time_offset" value="520"/>
+            <integer name="freq_resolution" value="$fres" />
+            <boolean name="freq_transform" value="$ft" />
+            <float name="lo_fbound" value="$lb" />
+            <float name="hi_fbound" value="$hb" />
+            <boolean name="high_quality_edges" value="true"/>
+            <rfilter name="rfilter" type="box">
+                <float name="radius" value="0.3"/>
+            </rfilter>
+        </film>
+    </sensor>
+</scene>
