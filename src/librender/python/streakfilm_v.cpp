@@ -68,10 +68,13 @@ MTS_PY_EXPORT(StreakFilm) {
         .def("put", py::overload_cast<const StreakImageBlock *>(&StreakFilm::put), "block"_a)
         .def("bitmap", py::overload_cast<bool>(&StreakFilm::bitmap), "raw"_a = false)
         .def("bitmap", py::overload_cast<int, bool>(&StreakFilm::bitmap), "slice"_a, "raw"_a)
+        .def_method(StreakFilm, freq_bins)
         .def_method(StreakFilm, num_bins)
         .def_method(StreakFilm, bin_width_opl)
         .def_method(StreakFilm, start_opl)
-        .def_method(StreakFilm, time_reconstruction_filter);
+        .def_method(StreakFilm, time_reconstruction_filter)
+        .def_method(StreakFilm, block_freq_transform)
+        .def_method(StreakFilm, film_freq_transform);
 
     MTS_PY_REGISTER_OBJECT("register_streakfilm", StreakFilm)
 }

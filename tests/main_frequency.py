@@ -150,7 +150,7 @@ def apply_fft(streakimg, et):
     # loop through all streak images
     for i in range(streakimg.shape[1]):
         streak = streakimg[:, i, :]
-
+        print(streak.shape)
         transformed[:, i, :] = np.fft.fftshift(np.fft.fft(streak, axis=1), axes=1)
 
     freqs = np.fft.fftshift(np.fft.fftfreq(n=streakimg.shape[2], d=et))
@@ -196,6 +196,8 @@ def visualize(streakimg, out):
 
     print("min : ", np.amin(streakimg))
     print("max : ", np.amax(streakimg))
+    print("mean : ", np.mean(streakimg))
+    print("stddev : ", np.std(streakimg))
 
     if "v" in args.result:
         name_video_file = out
@@ -212,33 +214,33 @@ def compare(t_streakimg, f_streakimg, et):
     
     print("Applying fft to each streak image")
     t_transformed, freqs = apply_fft(t_streakimg, et)
-    t_transformed = np.real(t_transformed)
+    t_transformed = np.real(t_transformed) 
     print("done.")
     print("used freqs: ", freqs)
 
-    tst = cm.seismic(t_transformed)
-    fst = cm.seismic(f_streakimg)
+    tst = cm.hot(t_transformed)
+    fst = cm.hot(f_streakimg)
 
     fig, (ax1, ax2) = plt.subplots(1,2)
     plt.subplots_adjust(bottom=0.15)
     
-    ax1.imshow(tst[:, 0, :])
-    ax2.imshow(fst[:, 0, :])
+    ax1.imshow(tst[:, :, 0])
+    ax2.imshow(fst[:, :, 0])
 
     print("showing plot")
     def update_plot(val):
         idx = int(sliderwave.val)
         ax1.cla()
         ax2.cla()
-        ax1.imshow(tst[:, idx, :])
-        ax2.imshow(fst[:, idx, :])
+        ax1.imshow(tst[:, :, idx])
+        ax2.imshow(fst[:, :, idx])
         fig.canvas.draw_idle()
 
     # Sliders
 
     axwave = plt.axes([0.25, 0.05, 0.5, 0.03])
 
-    sliderwave = Slider(axwave, 'Y slice', 0, f_streakimg.shape[1] - 1, valinit=0, valfmt='%d')
+    sliderwave = Slider(axwave, 'Y slice', 0, f_streakimg.shape[2] - 1, valinit=0, valfmt='%d')
     sliderwave.on_changed(update_plot)
 
     plt.show()

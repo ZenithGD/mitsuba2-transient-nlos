@@ -5905,6 +5905,12 @@ static const char *__doc_mitsuba_StreakFilm_m_time_filter = R"doc()doc";
 
 static const char *__doc_mitsuba_StreakFilm_m_start_opl = R"doc()doc";
 
+static const char *__doc_mitsuba_StreakFilm_m_freq_bins = R"doc(Specify the number of frequency bins, if Fourier transform is enabled.)doc";
+
+static const char *__doc_mitsuba_StreakFilm_m_block_freq_transform = R"doc(Enable Fourier transform for each sample applied to a streak image block.)doc";
+// TODO
+static const char *__doc_mitsuba_StreakFilm_m_film_freq_transform = R"doc(Enable Fourier transform while developing a streak film)doc";
+
 static const char *__doc_mitsuba_StreakFilm_put =
 R"doc(Merge an image block into the film. This methods should be thread-
 safe.)doc";
@@ -5912,6 +5918,12 @@ safe.)doc";
 static const char *__doc_mitsuba_StreakFilm_num_bins = R"doc(//! @{ \name Accessor functions)doc";
 
 static const char *__doc_mitsuba_StreakFilm_start_opl = R"doc()doc";
+
+static const char *__doc_mitsuba_StreakFilm_freq_bins = R"doc(Specify the number of frequency bins, if Fourier transform is enabled.)doc";
+
+static const char *__doc_mitsuba_StreakFilm_block_freq_transform = R"doc(Enable Fourier transform for each sample applied to a streak image block.)doc";
+// TODO
+static const char *__doc_mitsuba_StreakFilm_film_freq_transform = R"doc(Enable Fourier transform while developing a streak film)doc";
 
 static const char *__doc_mitsuba_StreakFilm_time_reconstruction_filter = R"doc()doc";
 

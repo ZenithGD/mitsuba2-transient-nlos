@@ -71,7 +71,7 @@ class StreakHDRFilm final : public StreakFilm<Float, Spectrum> {
 public:
     MTS_IMPORT_BASE(StreakFilm, m_size, m_crop_size, m_crop_offset, m_num_bins,
                     m_bin_width_opl, m_start_opl, m_auto_detect_bins,
-                    m_high_quality_edges, m_freq_transform, m_lo_fbound, m_hi_fbound,
+                    m_high_quality_edges, m_block_freq_transform, m_film_freq_transform, m_lo_fbound, m_hi_fbound,
                     m_filter, m_time_filter)
     MTS_IMPORT_TYPES(ReconstructionFilter, StreakImageBlock, ImageBlock)
 
@@ -167,6 +167,8 @@ public:
             }
         }
 
+        std::cout << "film : " << m_film_freq_transform << std::endl;
+        std::cout << "block : " << m_block_freq_transform << std::endl;
         props.mark_queried("banner"); // no banner in Mitsuba 2
     }
 
@@ -189,7 +191,7 @@ public:
                                          m_bin_width_opl,
                                          m_start_opl,
                                          channels.size(),
-                                         this->freq_transform());
+                                         this->block_freq_transform());
         m_storage->set_offset(m_crop_offset);
         m_storage->clear();
         m_channels = channels;
@@ -433,8 +435,6 @@ public:
 
         // Remove extension if it exists
         fs::create_directory(directoryname.replace_extension());
-
-        std::cout << m_storage << std::endl;
 
         for(int i = 0; i < m_size.y(); ++i) {
             std::string filename_str = "frame_" + std::to_string(i);

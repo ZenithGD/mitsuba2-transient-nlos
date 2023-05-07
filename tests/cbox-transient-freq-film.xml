@@ -2,6 +2,8 @@
     <default name="spp" value="32"/>
     <default name="res" value="256"/>
     <default name="max_depth" value="4"/>
+    <default name="bft" value="true" />
+    <default name="fft" value="true" />
     <default name="lb" value="-0.0625" />
     <default name="hb" value="0.0625" />
     <default name="time" value="380" />
@@ -86,15 +88,21 @@
         <sampler type="independent">  <!-- ldsampler -->
             <integer name="sample_count" value="$spp"/>
         </sampler>
-        <film type="streakhdrfilm" name="streakfilm">
+        <film type="freqstreakhdrfilm" name="streakfilm">
             <string name="component_format" value="float32" />
-            <string name="file_format" value="hdf5" />
+            <string name="file_format" value="exr" />
             <integer name="width" value="$res"/>
             <integer name="height" value="$res"/>
             <integer name="time" value="$time"/>
             <float name="exposure_time" value="8"/>
             <float name="time_offset" value="520"/>
-            <boolean name="block_freq_transform" value="true" />
+            <integer name="freq_resolution" value="$fres" />
+
+            <!-- Time resolved streak image block -->
+            <boolean name="block_freq_transform" value="$bft" />
+
+            <!-- Apply approximate Fourier Transform after render -->
+            <boolean name="film_freq_transform" value="$fft" />
             <float name="lo_fbound" value="$lb" />
             <float name="hi_fbound" value="$hb" />
             <boolean name="high_quality_edges" value="true"/>

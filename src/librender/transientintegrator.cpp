@@ -138,7 +138,7 @@ MTS_VARIANT bool TransientSamplingIntegrator<Float, Spectrum>::render(Scene *sce
                 ref<StreakImageBlock> block = new StreakImageBlock(
                     m_block_size, film->num_bins(), film->freq_bins(), film->lo_fbound(), film->hi_fbound(), film->bin_width_opl(),
                     film->start_opl(), channels.size(),
-                    film->freq_transform(),
+                    film->block_freq_transform(),
                     film->reconstruction_filter(),
                     film->time_reconstruction_filter(), !has_aovs);
                 scoped_flush_denormals flush_denormals(true);
@@ -192,7 +192,7 @@ MTS_VARIANT bool TransientSamplingIntegrator<Float, Spectrum>::render(Scene *sce
         ref<StreakImageBlock> block = new StreakImageBlock(
                     m_block_size, film->num_bins(), film->freq_bins(), film->lo_fbound(), film->hi_fbound(), film->bin_width_opl(),
                     film->start_opl(), channels.size(),
-                    film->freq_transform(),
+                    film->block_freq_transform(),
                     film->reconstruction_filter(),
                     film->time_reconstruction_filter(), !has_aovs);
 

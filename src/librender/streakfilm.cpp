@@ -25,10 +25,14 @@ MTS_VARIANT StreakFilm<Float, Spectrum>::StreakFilm(const Properties &props) : B
         props.float_("bin_width_opl", props.float_("exposure_time", -1.f));
     m_start_opl = props.float_("start_opl", props.float_("time_offset", -1.f));
     m_auto_detect_bins = props.bool_("auto_detect_bins", false);
-    m_freq_transform = props.bool_("freq_transform", false);
+    m_block_freq_transform = props.bool_("block_freq_transform", false);
+    m_film_freq_transform = props.bool_("film_freq_transform", false);
+
+    if ( m_block_freq_transform && m_film_freq_transform )
+        Throw("Can't apply Fourier transform on both block and film!");
     
     // If frequency transform is enabled, initialize bounds
-    if ( m_freq_transform ) {
+    if ( m_film_freq_transform || m_block_freq_transform ) {
         m_lo_fbound = props.float_("lo_fbound", 1.0);
         m_hi_fbound = props.float_("hi_fbound", 10.0);
         Assert(m_lo_fbound <= m_hi_fbound);
@@ -174,7 +178,8 @@ MTS_VARIANT void StreakFilm<Float, Spectrum>::auto_detect_bins(Scene *scene,
 MTS_VARIANT std::string StreakFilm<Float, Spectrum>::to_string() const {
     std::ostringstream oss;
     oss << "StreakFilm[" << std::endl
-        << "  freq_transform =" << std::boolalpha << m_freq_transform << std::endl
+        << "  block_freq_transform =" << std::boolalpha << m_block_freq_transform << std::endl
+        << "  film_freq_transform =" << std::boolalpha << m_film_freq_transform << std::endl
         << "  lo_fbound =" << m_lo_fbound << std::endl
         << "  hi_fbound =" << m_hi_fbound << std::endl
         << "  size = " << m_size << "," << std::endl

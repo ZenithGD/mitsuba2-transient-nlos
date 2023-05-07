@@ -57,11 +57,18 @@ public:
     }
 
     /**
-     * @brief Return whether the film applies a Fourier Transform on the streak film.
+     * @brief Return whether the film applies a Fourier Transform on the streak image blocks.
      * 
-     * @return m_freq_transform
+     * @return m_block_freq_transform
      */
-    inline bool freq_transform() const { return m_freq_transform; }
+    inline bool block_freq_transform() const { return m_block_freq_transform; }
+
+    /**
+     * @brief Return whether the film applies an approximate Fourier Transform after the film has been developed.
+     * 
+     * @return m_film_freq_transform
+     */
+    inline bool film_freq_transform() const { return m_film_freq_transform; }
     
     /**
      * @brief Return the lower frequency bound. Only valid if m_freq_transform is set to true
@@ -100,7 +107,8 @@ protected:
     float m_start_opl;
 
     bool m_auto_detect_bins;
-    bool m_freq_transform;
+    bool m_block_freq_transform;
+    bool m_film_freq_transform;
     float m_lo_fbound;
     float m_hi_fbound;
 
