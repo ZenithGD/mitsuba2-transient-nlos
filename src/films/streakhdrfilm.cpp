@@ -8,6 +8,10 @@
 #include <mitsuba/render/streakimageblock.h>
 
 #include <mutex>
+#include <vector>
+
+// use Enoki complex numbers instead of std ones
+#include <enoki/complex.h>
 
 NAMESPACE_BEGIN(mitsuba)
 
@@ -320,7 +324,52 @@ public:
         source->convert(target);
 
         return target;
-     };
+    };
+
+    // compute one term of the sum approximation of the integral Fourier Transform.
+    Complex<Float> ft_partial_term(Float value, Float t, Float freq) {
+        
+        Complex<Float> I(0.0f, 1.0f); 
+        //std::cout << I * -2.0f * 3.141592f * freq * t << std::endl;
+        return enoki::exp(I * -2.0f * 3.141592f * freq * t) * value;
+    }
+
+    DynamicBuffer<Float> freq_bitmap(const DynamicBuffer<Float>& dslice) {
+
+        std::cout << "freq_bitmap" << std::endl;
+        std::cout << "size : " << m_storage->size() << ", " << this->freq_bins() << ", " << m_storage->channel_count() << std::endl;
+        size_t fsize = m_storage->size().x() * this->freq_bins() * m_storage->channel_count();
+        
+        std::cout << "fsize : " << fsize << std::endl;
+        // TODO change to complex
+        DynamicBuffer<Float> fslice = enoki::zero<DynamicBuffer<Float>>(fsize);
+
+        DynamicBuffer<Float> freqs = enoki::linspace<DynamicBuffer<Float>>(this->lo_fbound(), this->hi_fbound(), this->freq_bins());
+        DynamicBuffer<Float> opls = enoki::linspace<DynamicBuffer<Float>>(this->start_opl(), this->start_opl() + (this->num_bins() - 1) * this->bin_width_opl(), this->num_bins());
+
+        std::cout << this->num_bins() << " =? " << m_storage->length() << std::endl;
+        unsigned int xs = m_storage->size().x();
+        unsigned int ts = m_storage->length();
+        unsigned int cs = m_storage->channel_count();
+        for ( unsigned int i = 0; i < xs; i++ ) {
+            for ( unsigned int t = 0; t < ts; t++ ) {
+                // For each temporal bin, accumulate on the transformed frequency slice
+                UInt32 time_idx = cs * (i * ts + t);
+                UInt32 f_offset = cs * (i * this->freq_bins());
+
+                for ( unsigned int c = 0; c < cs; c++ ) {
+                    
+                    // add term for each frequency
+                    for ( unsigned int f = 0; f < this->freq_bins(); f++ ) {
+                        auto ft = ft_partial_term(dslice[time_idx + c], opls[t], freqs[f]);
+                        scatter_add(fslice, real(ft) / m_bin_width_opl, f_offset + f * cs + c);
+                    }
+                }
+            }
+        }
+
+        return fslice;
+    }
 
     ref<Bitmap> bitmap(int slice, bool raw) override {
         if constexpr (is_cuda_array_v<Float>) {
@@ -329,17 +378,17 @@ public:
         }
 
         DynamicBuffer<Float> dslice = m_storage->data(slice);
-
         bool has_aovs = m_channels.size() != 3 && m_channels.size() != 5;
 
+        auto length = this->film_freq_transform() ? this->freq_bins() : m_storage->length();
         ref<Bitmap> source = new Bitmap(
             has_aovs ? Bitmap::PixelFormat::MultiChannel
                      : (m_channels.size() == 3 ? Bitmap::PixelFormat::XYZ
                                                : Bitmap::PixelFormat::XYZAW),
             struct_type_v<ScalarFloat>,
-            {m_storage->length(), m_storage->width()},
+            {length, m_storage->width()},
             m_storage->channel_count(),
-            (uint8_t *) dslice.managed().data()
+            (uint8_t *) ((this->film_freq_transform() ? freq_bitmap(dslice) : dslice).managed().data())
             // This second option should work too (similar to hdrfilm.cpp), but I do not why,
             // it makes the first 4 values of the slice to be corrupt/incorrect. The upper way
             // doing it in two steps with the variable dslice, makes it work. It probably has
@@ -354,7 +403,7 @@ public:
         ref<Bitmap> target = new Bitmap(
             has_aovs ? Bitmap::PixelFormat::MultiChannel : m_pixel_format,
             m_component_format,
-            {m_storage->length(), m_storage->width()},
+            {length, m_storage->width()},
             // NOTE(diego): old code had "channel_count() - 1" here,
             // but it makes scalar_rgb_polarized not work.
             has_aovs ? m_storage->channel_count() : 0
@@ -446,7 +495,8 @@ public:
             filename = directoryname / filename;
             Log(Info, "Developing \"%s\" ..", filename.string());
 
-            bitmap(i, false)->write(filename, m_file_format);
+            // aquí estaba el problema, raw = false
+            bitmap(i, m_block_freq_transform || m_film_freq_transform)->write(filename, m_file_format);
 
             Log(Info, "\U00002714 %s done.", filename.string());
         }

@@ -31,11 +31,7 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
         m_weights_y     = m_weights_x + filter_size;
     }
 
-    if ( m_freq_transform ) {
-        for ( int i = 0; i < m_freq_resolution; i++ ) {
-            m_freqs[i] = m_lo_fbound + (m_hi_fbound - m_lo_fbound) * (float)i / (float)(m_freq_resolution - 1);
-        }
-    }
+    m_freqs = enoki::linspace<DynamicBuffer<Float>>(this->lo_fbound(), this->hi_fbound(), this->freq_resolution());
     // TODO(jorge): initialize also the time_filter
 
     // set size depending on the frequency resolution if freq transform is enabled
@@ -106,10 +102,11 @@ StreakImageBlock<Float, Spectrum>::put(const StreakImageBlock *block) {
 // compute one term of the sum approximation of the integral Fourier Transform.
 template <typename Float>
 Complex<Float> ft_partial_term(Float value, Float t, Float freq) {
-    
+        
     Complex<Float> I(0.0f, 1.0f); 
-    //std::cout << value << " * exp(-2.0 pi i * " << freq << "*" << t << ")" << std::endl;
-    return exp(I * -2.0f * 3.141592f * freq * t) * value;
+    const static Float pi = std::acos(-1.0);
+    //std::cout << I * -2.0f * 3.141592f * freq * t << std::endl;
+    return enoki::exp(-2.0f * pi * I * freq * t) * value;
 }
 
 MTS_VARIANT void
@@ -219,7 +216,7 @@ StreakImageBlock<Float, Spectrum>::put(
                             for ( int f = 0; f < m_freq_resolution; f++ ) {
 
                                 UInt32 freq_offset = offset + m_channel_count * f;
-                                Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl, m_freqs[f]);
+                                Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl / m_exposure_time, m_freqs[f]);
                                 scatter_add(m_data, real(ft), freq_offset + k, enabled);
                             }
                         } else {
@@ -245,7 +242,7 @@ StreakImageBlock<Float, Spectrum>::put(
 
                         UInt32 freq_offset = offset + m_channel_count * f;
 
-                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], radiance_sample.opl, m_freqs[f]);
+                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], pos_sensor, m_freqs[f]);
                         scatter_add(m_data, real(ft), freq_offset + k, enabled);
                     }
                 } else {

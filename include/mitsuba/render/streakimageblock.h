@@ -270,14 +270,14 @@ protected:
     int m_border_size;
     int m_time_border_size;
     DynamicBuffer<Float> m_data;
+    bool m_freq_transform;
     const ReconstructionFilter *m_filter;
     const ReconstructionFilter *m_time_filter;
     Float *m_weights_x, *m_weights_y;
     bool m_warn_negative;
     bool m_warn_invalid;
     bool m_normalize;
-    bool m_freq_transform;
-    std::vector<Float> m_freqs;
+    DynamicBuffer<Float> m_freqs;
 };
 
 MTS_EXTERN_CLASS_RENDER(StreakImageBlock)

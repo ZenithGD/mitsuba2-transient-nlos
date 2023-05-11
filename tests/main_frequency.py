@@ -150,7 +150,6 @@ def apply_fft(streakimg, et):
     # loop through all streak images
     for i in range(streakimg.shape[1]):
         streak = streakimg[:, i, :]
-        print(streak.shape)
         transformed[:, i, :] = np.fft.fftshift(np.fft.fft(streak, axis=1), axes=1)
 
     freqs = np.fft.fftshift(np.fft.fftfreq(n=streakimg.shape[2], d=et))
@@ -216,7 +215,8 @@ def compare(t_streakimg, f_streakimg, et):
     t_transformed, freqs = apply_fft(t_streakimg, et)
     t_transformed = np.real(t_transformed) 
     print("done.")
-    print("used freqs: ", freqs)
+    print("min freq :", freqs.min())
+    print("max freq :", freqs.max())
 
     tst = cm.hot(t_transformed)
     fst = cm.hot(f_streakimg)
