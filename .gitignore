@@ -84,3 +84,4 @@ compile_commands.json
 *.mp4
 *.exr
 *.png
+*.hdf5
