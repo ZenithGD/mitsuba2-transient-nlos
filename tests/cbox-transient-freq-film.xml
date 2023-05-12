@@ -4,8 +4,8 @@
     <default name="max_depth" value="4"/>
     <default name="bft" value="false" />
     <default name="fft" value="true" />
-    <default name="lb" value="-0.0625" />
-    <default name="hb" value="0.062171052631578946" />
+    <default name="lb" value="-0.5" />
+    <default name="hb" value="0.5" />
     <default name="time" value="380" />
     <default name="fres" value="380" />
 

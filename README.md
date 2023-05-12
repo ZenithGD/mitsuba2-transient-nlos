@@ -31,9 +31,13 @@ We provide the `transientpath`, `transientstokes` and `streakhdrfilm` plugins. T
 
 ```xml
 <scene version="2.0.0">
-    <default name="spp" value="256"/>
-    <default name="res" value="512"/>
+    <default name="spp" value="64"/>
+    <default name="res" value="256"/>
     <default name="max_depth" value="4"/>
+    <default name="lb" value="-0.5" />
+    <default name="hb" value="0.5" />
+    <default name="time" value="380" />
+    <default name="fres" value="380" />
 
     <!-- <integrator type="direct"/> -->
     <integrator type="transientpath">
@@ -115,19 +119,19 @@ We provide the `transientpath`, `transientstokes` and `streakhdrfilm` plugins. T
             <integer name="sample_count" value="$spp"/>
         </sampler>
         <film type="streakhdrfilm" name="streakfilm">
+            <string name="component_format" value="float32" />
             <string name="file_format" value="hdf5" />
             <integer name="width" value="$res"/>
             <integer name="height" value="$res"/>
-            <integer name="time" value="380"/>
+            <integer name="time" value="$time"/>
             <float name="exposure_time" value="8"/>
             <float name="time_offset" value="520"/>
-            <integer name="freq_resolution" value="2" />
-            <boolean name="freq_transform" value="true" />
-            <float name="lo_fbound" value="-1" />
-            <float name="hi_fbound" value="1" />
+            <boolean name="block_freq_transform" value="true" />
+            <float name="lo_fbound" value="$lb" />
+            <float name="hi_fbound" value="$hb" />
             <boolean name="high_quality_edges" value="true"/>
             <rfilter name="rfilter" type="box">
-                <float name="radius" value="0.3"/>
+                <float name="radius" value="0.1"/>
             </rfilter>
         </film>
     </sensor>
