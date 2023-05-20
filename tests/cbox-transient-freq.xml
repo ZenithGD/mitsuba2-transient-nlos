@@ -2,11 +2,14 @@
     <default name="spp" value="64"/>
     <default name="res" value="256"/>
     <default name="max_depth" value="4"/>
-    <default name="lb" value="-0.5" />
-    <default name="hb" value="0.5" />
+    <default name="lb" value="-0.0625" />
+    <default name="hb" value="0.0625" />
     <default name="time" value="380" />
     <default name="fres" value="380" />
-
+    <default name="bft" value="true" />
+    <default name="fft" value="false" />
+    <default name="format" value="exr" />
+    
     <!-- <integrator type="direct"/> -->
     <integrator type="transientpath">
         <integer name="max_depth" value="$max_depth"/>
@@ -31,6 +34,8 @@
     <bsdf type="diffuse" id="light">
         <rgb name="reflectance" value="0.936461, 0.740433, 0.705267"/>
     </bsdf>
+
+    <!--
     <shape type="obj">
         <string name="filename" value="meshes/cbox_luminaire.obj"/>
         <transform name="to_world">
@@ -39,6 +44,7 @@
         <ref id="light"/>
         <ref id="area-emitter"/>
     </shape>
+    -->
     <shape type="obj">
         <string name="filename" value="meshes/cbox_floor.obj"/>
         <ref id="white"/>
@@ -68,8 +74,11 @@
         <ref id="box"/>
     </shape>
 
-    <emitter type="area" id="area-emitter">
-        <rgb name="radiance" value="18.387, 10.9873, 2.75357"/>
+    <emitter type="point">
+        <rgb name="intensity" value="180000.387, 100000.9873, 20000.75357"/>
+        <transform name="to_world">
+            <translate x="278" y="273" z="-800"/>
+        </transform>
     </emitter>
 
     <sensor type="perspective">
@@ -88,13 +97,20 @@
         </sampler>
         <film type="streakhdrfilm" name="streakfilm">
             <string name="component_format" value="float32" />
-            <string name="file_format" value="hdf5" />
+            <string name="file_format" value="$format" />
             <integer name="width" value="$res"/>
             <integer name="height" value="$res"/>
             <integer name="time" value="$time"/>
             <float name="exposure_time" value="8"/>
             <float name="time_offset" value="520"/>
-            <boolean name="block_freq_transform" value="true" />
+            <!-- Time resolved streak image block -->
+            <boolean name="block_freq_transform" value="$bft" />
+
+            <!-- Apply approximate Fourier Transform after render -->
+            <boolean name="film_freq_transform" value="$fft" />
+            
+            <!-- Frequency resolution -->
+            <integer name="freq_resolution" value="$fres" />
             <float name="lo_fbound" value="$lb" />
             <float name="hi_fbound" value="$hb" />
             <boolean name="high_quality_edges" value="true"/>

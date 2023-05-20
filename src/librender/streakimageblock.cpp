@@ -31,7 +31,9 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
         m_weights_y     = m_weights_x + filter_size;
     }
 
-    m_freqs = enoki::linspace<DynamicBuffer<Float>>(this->lo_fbound(), this->hi_fbound(), this->freq_resolution());
+    // 
+    Float hi = this->hi_fbound() - ( this->hi_fbound() - this->lo_fbound() ) / (Float)this->freq_resolution();
+    m_freqs = enoki::linspace<DynamicBuffer<Float>>(this->lo_fbound(), hi, this->freq_resolution());
     // TODO(jorge): initialize also the time_filter
 
     // set size depending on the frequency resolution if freq transform is enabled
@@ -213,7 +215,7 @@ StreakImageBlock<Float, Spectrum>::put(
 
                         if ( m_freq_transform ) {
 
-                            for ( int f = 0; f < m_freq_resolution; f++ ) {
+                            ENOKI_NOUNROLL for ( int f = 0; f < m_freq_resolution; f++ ) {
 
                                 UInt32 freq_offset = offset + m_channel_count * f;
                                 Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl / m_exposure_time, m_freqs[f]);
@@ -234,19 +236,26 @@ StreakImageBlock<Float, Spectrum>::put(
                                             lo.x() * m_time + pos_sensor_int);
 
             Mask enabled  = active && all(lo >= 0u && lo < size);
-            ENOKI_NOUNROLL for (uint32_t k = 0; k < m_channel_count; ++k) {
 
-                if ( m_freq_transform ) {
+            if ( m_freq_transform ) {
 
-                    for ( int f = 0; f < m_freq_resolution; f++ ) {
+                ENOKI_NOUNROLL for ( int f = 0; f < m_freq_resolution; f++ ) {
 
-                        UInt32 freq_offset = offset + m_channel_count * f;
+                    UInt32 freq_offset = offset + m_channel_count * f;
 
-                        Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k], pos_sensor, m_freqs[f]);
-                        scatter_add(m_data, real(ft), freq_offset + k, enabled);
-                    }
-                } else {
-                
+                    // only return red channel for now; can be easily changed in the future
+                    Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[0], radiance_sample.opl, m_freqs[f]);
+
+                    Array<Float, 2> arr_data( real(ft), imag(ft) );
+                    Array<UInt32, 2> arr_idx( freq_offset, freq_offset + 1 );
+
+                    // store real part of the transformed sample in channel 0 and imaginary in 1
+                    scatter_add(m_data, arr_data, arr_idx, enabled);
+
+                    // channels 2 and 3 are unused
+                }
+            } else {
+                ENOKI_NOUNROLL for (uint32_t k = 0; k < m_channel_count; ++k) {
                     scatter_add(m_data, radiance_sample.values[k], time_offset + k, enabled);
                 }
             }
