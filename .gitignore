@@ -85,3 +85,5 @@ compile_commands.json
 *.exr
 *.png
 *.hdf5
+
+!figures/*
