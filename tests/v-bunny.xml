@@ -1,0 +1,97 @@
+<scene version="2.0.0">
+    <!-- <integrator type="direct"/> -->
+    <integrator type="path">
+        <integer name="max_depth" value="6"/>
+    </integrator>
+
+    <sensor type="perspective">
+        <string name="fov_axis" value="smaller"/>
+        <float name="near_clip" value="10"/>
+        <float name="far_clip" value="2800"/>
+        <float name="focus_distance" value="1000"/>
+        <float name="fov" value="39.3077"/>
+        <transform name="to_world">
+            <lookat origin="278, 273, -800"
+                    target="278, 273, -799"
+                    up    ="  0,   1,    0"/>
+        </transform>
+        <sampler type="independent">  <!-- ldsampler -->
+            <integer name="sample_count" value="128"/>
+        </sampler>
+        <film type="hdrfilm">
+            <integer name="width" value="256"/>
+            <integer name="height" value="256"/>
+            <rfilter name="rfilter" type="gaussian"/>
+        </film>
+    </sensor>
+
+    <!-- geometry and bsdfs -->
+    <bsdf type="diffuse" id="box">
+        <rgb name="reflectance" value="0.45, 0.30, 0.90"/>
+    </bsdf>
+
+    <bsdf type="diffuse" id="white">
+        <rgb name="reflectance" value="0.885809, 0.698859, 0.666422"/>
+    </bsdf>
+
+    <bsdf type="diffuse" id="red">
+        <rgb name="reflectance" value="0.570068, 0.0430135, 0.0443706"/>
+    </bsdf>
+
+    <bsdf type="diffuse" id="green">
+        <rgb name="reflectance" value="0.105421, 0.37798, 0.076425"/>
+    </bsdf>
+
+    <bsdf type="diffuse" id="light">
+        <rgb name="reflectance" value="0.936461, 0.740433, 0.705267"/>
+    </bsdf>
+
+    <!-- ground -->
+    <shape type="rectangle">
+        <transform name="to_world">
+            <rotate value="1, 0, 0" angle="-90" />
+            <scale value="1000" />
+            <translate x="300" y="0" z="500" />
+        </transform>
+        <ref id="white" />
+    </shape>
+
+    <!-- walls -->
+    <shape type="rectangle">
+        <transform name="to_world">
+            <rotate value="0, 1, 0" angle="45" />
+            <scale value="1000" />
+            <translate x="500" y="0" z="500" />
+        </transform>
+        <boolean name="flip_normals" value="true" />
+        <ref id="red" />
+    </shape>
+
+    <shape type="rectangle">
+        <transform name="to_world">
+            <rotate value="0, 1, 0" angle="-45" />
+            <scale value="1000" />
+            <translate x="50" y="0" z="500" />
+        </transform>
+        <boolean name="flip_normals" value="true" />
+        <ref id="green" />
+    </shape>
+
+    <shape type="obj">
+        <string name="filename" value="meshes/bunny.obj"/>
+        <ref id="white"/>
+        <transform name="to_world">
+            <scale value="1500"/>
+            <rotate value="0, 1, 0" angle="180"/>
+            <translate x="250" y="-50" z="300"/>
+        </transform>
+    </shape>
+
+    <emitter type="point">
+        <rgb name="intensity" value="180000.387, 100000.9873, 20000.75357"/>
+        <transform name="to_world">
+            <translate x="278" y="273" z="-800"/>
+        </transform>
+    </emitter>
+
+</scene>

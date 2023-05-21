@@ -116,12 +116,15 @@ def visualize(streakimg, args):
     show_streakimg(phase)
 
     # depth reconstruction
-    wl = 8000
+    wl = 5000
     depth = phase[:,:,0] * np.abs(wl)/(4*np.pi);
 
     plt.imshow(depth, cmap="hot")
     print(depth.min(), depth.max())
-    plt.show()
+
+    fig, ax = plt.subplots()
+    cont = ax.contour(np.arange(depth.shape[1]), np.arange(depth.shape[0] - 1, -1, -1), depth)
+    ax.clabel(cont, inline=True, fontsize=10)
 
     fig = plt.figure()
     ax = plt.axes(projection='3d')

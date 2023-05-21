@@ -14,7 +14,7 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
     float time_offset, size_t channel_count, bool freq_transform, const ReconstructionFilter *filter,
     const ReconstructionFilter *time_filter, bool warn_negative,
     bool warn_invalid, bool border, bool normalize)
-    : m_offset(0), m_size(0), m_depth(0), m_time(time), m_freq_resolution(freq_resolution), 
+    : m_offset(0), m_size(0), m_depth(freq_transform ? freq_resolution : time), m_time(time), m_freq_resolution(freq_resolution), 
       m_lo_fbound(lo_fbound), m_hi_fbound(hi_fbound), m_exposure_time(exposure_time),
       m_time_offset(time_offset), m_channel_count((uint32_t) channel_count),
       m_freq_transform(freq_transform), m_filter(filter), m_time_filter(time_filter), m_weights_x(nullptr),
@@ -31,9 +31,7 @@ StreakImageBlock<Float, Spectrum>::StreakImageBlock(
         m_weights_y     = m_weights_x + filter_size;
     }
 
-    // 
-    Float hi = this->hi_fbound() - ( this->hi_fbound() - this->lo_fbound() ) / (Float)this->freq_resolution();
-    m_freqs = enoki::linspace<DynamicBuffer<Float>>(this->lo_fbound(), hi, this->freq_resolution());
+    m_freqs = enoki::linspace<DynamicBuffer<Float>>(this->lo_fbound(), this->hi_fbound(), this->freq_resolution());
     // TODO(jorge): initialize also the time_filter
 
     // set size depending on the frequency resolution if freq transform is enabled
@@ -218,7 +216,7 @@ StreakImageBlock<Float, Spectrum>::put(
                             ENOKI_NOUNROLL for ( int f = 0; f < m_freq_resolution; f++ ) {
 
                                 UInt32 freq_offset = offset + m_channel_count * f;
-                                Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl / m_exposure_time, m_freqs[f]);
+                                Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[k] * weight, radiance_sample.opl, m_freqs[f]);
                                 scatter_add(m_data, real(ft), freq_offset + k, enabled);
                             }
                         } else {
@@ -244,7 +242,7 @@ StreakImageBlock<Float, Spectrum>::put(
                     UInt32 freq_offset = offset + m_channel_count * f;
 
                     // only return red channel for now; can be easily changed in the future
-                    Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[0], radiance_sample.opl, m_freqs[f]);
+                    Complex<Float> ft = ft_partial_term<Float>(radiance_sample.values[0], radiance_sample.opl - m_time_offset, m_freqs[f]);
 
                     Array<Float, 2> arr_data( real(ft), imag(ft) );
                     Array<UInt32, 2> arr_idx( freq_offset, freq_offset + 1 );
@@ -255,6 +253,8 @@ StreakImageBlock<Float, Spectrum>::put(
                     // channels 2 and 3 are unused
                 }
             } else {
+
+                // TODO: vectorize this
                 ENOKI_NOUNROLL for (uint32_t k = 0; k < m_channel_count; ++k) {
                     scatter_add(m_data, radiance_sample.values[k], time_offset + k, enabled);
                 }

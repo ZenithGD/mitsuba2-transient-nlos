@@ -3,11 +3,10 @@
     <default name="res" value="256"/>
     <default name="max_depth" value="4"/>
     <default name="lb" value="-0.0625" />
-    <default name="hb" value="0.0625" />
+    <default name="hb" value="0.062171052631578946" />
     <default name="time" value="380" />
     <default name="fres" value="380" />
-    <default name="bft" value="true" />
-    <default name="fft" value="false" />
+    <default name="bft" value="false" />
     <default name="format" value="exr" />
     
     <!-- <integrator type="direct"/> -->
@@ -106,8 +105,8 @@
             <!-- Time resolved streak image block -->
             <boolean name="block_freq_transform" value="$bft" />
 
-            <!-- Apply approximate Fourier Transform after render -->
-            <boolean name="film_freq_transform" value="$fft" />
+            <!-- Apply approximate Fourier Transform after render, unused for now -->
+            <boolean name="film_freq_transform" value="false" />
             
             <!-- Frequency resolution -->
             <integer name="freq_resolution" value="$fres" />

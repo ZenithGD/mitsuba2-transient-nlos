@@ -16,6 +16,7 @@ import mitsuba
 from read_write_imgs import *
 from tonemapper import *
 from tqdm import tqdm
+from visualize import *
 
 import h5py
 
@@ -31,33 +32,6 @@ def apply_fft(streakimg, et):
 def apply_ifft(streakimg):
     return np.fft.ifft(np.fft.ifftshift(streakimg, axes=2), axis=2)
 
-def compare_window(left, right, colormap = cm.hot):
-    tst = colormap(left)
-    fst = colormap(right)
-
-    fig, (ax1, ax2) = plt.subplots(1,2)
-    plt.subplots_adjust(bottom=0.15)
-    
-    ax1.imshow(tst[:, :, 0])
-    ax2.imshow(fst[:, :, 0])
-
-    print("showing plot")
-    def update_plot(val):
-        idx = int(sliderwave.val)
-        ax1.cla()
-        ax2.cla()
-        ax1.imshow(tst[:, :, idx])
-        ax2.imshow(fst[:, :, idx])
-        fig.canvas.draw_idle()
-
-    # Sliders
-    axwave = plt.axes([0.25, 0.05, 0.5, 0.03])
-
-    sliderwave = Slider(axwave, 'Y slice', 0, right.shape[2] - 1, valinit=0, valfmt='%d')
-    sliderwave.on_changed(update_plot)
-
-    plt.show()
-
 def compare(t_streakimg, f_streakimg, et):
     
     # 1. Apply FFT to time-resolved image
@@ -68,8 +42,10 @@ def compare(t_streakimg, f_streakimg, et):
     print("max freq :", freqs.max())
 
     # 2. Compare FFT of time-resolved streakimg and freq transformed streakimg side by side
-    compare_window(np.real(t_transformed), np.real(f_streakimg))
-    compare_window(np.imag(t_transformed), np.imag(f_streakimg))
+    compare_window(np.real(t_transformed), np.real(f_streakimg), freqs, "Bin frecuencia", "Imagen, parte real")
+    compare_slice_window(np.real(t_transformed), np.real(f_streakimg), "Perfiles, parte real")
+    compare_window(np.imag(t_transformed), np.imag(f_streakimg), freqs, "Bin frecuencia", "Imagen, parte imaginaria")
+    compare_slice_window(np.imag(t_transformed), np.imag(f_streakimg), "Perfiles, parte imaginaria")
 
     # 3. Apply IFFT to frequency domain streakimg and obtain real part
     print("Applying ifft to each streak image")
@@ -77,9 +53,9 @@ def compare(t_streakimg, f_streakimg, et):
     print("done.")
 
     # 4. Compare time-resolved streakimg and IFFT of freq transformed streakimg side by side
-    compare_window(t_streakimg, f_inv_transformed)
+    compare_window(t_streakimg, f_inv_transformed, np.arange(t_streakimg.shape[2]), "Bin temporal", "Transformada inversa")
     del f_inv_transformed
-
+    
     # 5. Compute phase of both FFT transform and manual transform
     print("Computing phase")
     t_phase = np.angle(t_transformed)
@@ -90,7 +66,7 @@ def compare(t_streakimg, f_streakimg, et):
     print("done.")
 
     # 6. Compare phase of both FFT transform and manual transform
-    compare_window(t_phase, f_phase, cm.twilight_shifted)
+    compare_window(t_phase, f_phase, "Bin frecuencia", "Fase", cm.twilight_shifted, (-np.pi, np.pi))
 
 def main(args):
     # 1. Load time-resolved streakimg and frequency streakimg
